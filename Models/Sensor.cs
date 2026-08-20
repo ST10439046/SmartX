@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 
 namespace SmartIotApi.Models;
 
@@ -27,5 +28,6 @@ public partial class Sensor
 
     public virtual ICollection<NetworkTopology> NetworkTopologyToNodeMacNavigations { get; set; } = new List<NetworkTopology>();
 
-    public virtual ICollection<TelemetryDatum> TelemetryData { get; set; } = new List<TelemetryDatum>();
+    [JsonIgnore]
+    public virtual ICollection<TelemetryDatum>? TelemetryData { get; set; } = new List<TelemetryDatum>();
 }

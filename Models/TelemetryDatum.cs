@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 
 namespace SmartIotApi.Models;
 
@@ -15,5 +16,6 @@ public partial class TelemetryDatum
 
     public DateTime? Timestamp { get; set; }
 
-    public virtual Sensor SensorMacNavigation { get; set; } = null!;
+    [JsonIgnore]
+    public virtual Sensor? SensorMacNavigation { get; set; }
 }
