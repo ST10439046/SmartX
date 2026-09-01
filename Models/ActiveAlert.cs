@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 
 namespace SmartIotApi.Models;
 
@@ -17,5 +18,11 @@ public partial class ActiveAlert
 
     public DateTime? CreatedAt { get; set; }
 
+    /// <summary>
+    /// Navigation property to the sensor that generated this alert.
+    /// Set to JsonIgnore to prevent circular reference serialization issues.
+    /// The SensorMac foreign key provides the reference needed by clients.
+    /// </summary>
+    [JsonIgnore]
     public virtual Sensor SensorMacNavigation { get; set; } = null!;
 }

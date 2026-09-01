@@ -21,7 +21,9 @@ namespace SmartIotApi.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<ActiveAlert>>> GetActiveAlerts()
         {
-            return await _context.ActiveAlerts.Include(a => a.SensorMacNavigation).ToListAsync();
+            // Note: SensorMacNavigation is JsonIgnored to prevent circular reference serialization.
+            // Clients can use the SensorMac foreign key to fetch sensor details separately.
+            return await _context.ActiveAlerts.ToListAsync();
         }
 
         /// <summary>
@@ -30,9 +32,9 @@ namespace SmartIotApi.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<ActiveAlert>> GetActiveAlert(int id)
         {
-            var alert = await _context.ActiveAlerts
-                .Include(a => a.SensorMacNavigation)
-                .FirstOrDefaultAsync(a => a.AlertId == id);
+            // Note: SensorMacNavigation is JsonIgnored to prevent circular reference serialization.
+            // Clients can use the SensorMac foreign key to fetch sensor details separately.
+            var alert = await _context.ActiveAlerts.FirstOrDefaultAsync(a => a.AlertId == id);
 
             if (alert == null)
             {

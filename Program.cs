@@ -1,6 +1,7 @@
 
 using Microsoft.EntityFrameworkCore;
 using SmartIotApi.Models;
+using SmartIotApi.Services;
 
 namespace SmartIotApi
 {
@@ -35,6 +36,12 @@ namespace SmartIotApi
                         .AllowAnyMethod();
                 });
             });
+
+            // Register the TelemetrySimulatorService for background telemetry generation
+            // This service runs only in Development environment and sends random sensor data every 10 seconds
+            builder.Services.AddSingleton<TelemetrySimulatorService>();
+            builder.Services.AddHostedService(provider => provider.GetRequiredService<TelemetrySimulatorService>());
+
             var app = builder.Build();
 
             using (var scope = app.Services.CreateScope())
