@@ -21,6 +21,8 @@ public partial class SmartIotContext : DbContext
 
     public virtual DbSet<CommandHistory> CommandHistories { get; set; }
 
+    public virtual DbSet<DeploymentNode> DeploymentNodes { get; set; }
+
     public virtual DbSet<NetworkTopology> NetworkTopologies { get; set; }
 
     public virtual DbSet<Sensor> Sensors { get; set; }
@@ -110,6 +112,31 @@ public partial class SmartIotContext : DbContext
                 .HasConstraintName("FK__CommandHi__Senso__4316F928");
         });
 
+        modelBuilder.Entity<DeploymentNode>(entity =>
+        {
+            entity.HasKey(e => e.NodeId);
+
+            entity.Property(e => e.NodeId).ValueGeneratedOnAdd();
+            entity.Property(e => e.Name)
+                .HasMaxLength(100)
+                .IsUnicode(false)
+                .IsRequired();
+            entity.Property(e => e.Description)
+                .HasMaxLength(500)
+                .IsUnicode(false);
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
+
+            // Self-referential relationship for parent-child hierarchy
+            entity.HasOne(d => d.Parent)
+                .WithMany(p => p.Children)
+                .HasForeignKey(d => d.ParentNodeId)
+                .OnDelete(DeleteBehavior.Restrict)
+                .HasConstraintName("FK__DeploymentNode__Parent");
+        });
+
         modelBuilder.Entity<NetworkTopology>(entity =>
         {
             entity.HasKey(e => e.LinkId).HasName("PK__NetworkT__2D1221558729ED3A");
@@ -161,6 +188,14 @@ public partial class SmartIotContext : DbContext
             entity.Property(e => e.Zone)
                 .HasMaxLength(50)
                 .IsUnicode(false);
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+
+            // Foreign key relationship to DeploymentNode
+            entity.HasOne(d => d.DeploymentNode)
+                .WithMany(p => p.Sensors)
+                .HasForeignKey(d => d.DeploymentNodeId)
+                .OnDelete(DeleteBehavior.SetNull)
+                .HasConstraintName("FK__Sensor__DeploymentNode");
         });
 
         modelBuilder.Entity<TelemetryDatum>(entity =>
