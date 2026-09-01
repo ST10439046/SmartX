@@ -21,10 +21,9 @@ namespace SmartIotApi.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<NetworkTopology>>> GetNetworkTopologies()
         {
-            return await _context.NetworkTopologies
-                .Include(n => n.FromNodeMacNavigation)
-                .Include(n => n.ToNodeMacNavigation)
-                .ToListAsync();
+            // Note: Navigation properties are JsonIgnored to prevent circular references.
+            // Use FromNodeMac and ToNodeMac foreign keys to fetch sensor details.
+            return await _context.NetworkTopologies.ToListAsync();
         }
 
         /// <summary>
@@ -33,10 +32,8 @@ namespace SmartIotApi.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<NetworkTopology>> GetNetworkTopology(int id)
         {
-            var topology = await _context.NetworkTopologies
-                .Include(n => n.FromNodeMacNavigation)
-                .Include(n => n.ToNodeMacNavigation)
-                .FirstOrDefaultAsync(n => n.LinkId == id);
+            // Note: Navigation properties are JsonIgnored to prevent circular references.
+            var topology = await _context.NetworkTopologies.FirstOrDefaultAsync(n => n.LinkId == id);
 
             if (topology == null)
             {

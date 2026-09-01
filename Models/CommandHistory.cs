@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 
 namespace SmartIotApi.Models;
 
@@ -15,5 +16,10 @@ public partial class CommandHistory
 
     public DateTime? CreatedAt { get; set; }
 
+    /// <summary>
+    /// Navigation property to the sensor that received this command.
+    /// Set to JsonIgnore to prevent circular reference serialization.
+    /// </summary>
+    [JsonIgnore]
     public virtual Sensor SensorMacNavigation { get; set; } = null!;
 }

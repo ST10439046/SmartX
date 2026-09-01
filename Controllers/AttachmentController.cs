@@ -21,7 +21,9 @@ namespace SmartIotApi.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Attachment>>> GetAttachments()
         {
-            return await _context.Attachments.Include(a => a.SensorMacNavigation).ToListAsync();
+            // Note: SensorMacNavigation is JsonIgnored to prevent circular reference.
+            // Use the SensorMac foreign key to fetch sensor details if needed.
+            return await _context.Attachments.ToListAsync();
         }
 
         /// <summary>
@@ -30,9 +32,8 @@ namespace SmartIotApi.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<Attachment>> GetAttachment(int id)
         {
-            var attachment = await _context.Attachments
-                .Include(a => a.SensorMacNavigation)
-                .FirstOrDefaultAsync(a => a.AttachmentId == id);
+            // Note: SensorMacNavigation is JsonIgnored to prevent circular reference.
+            var attachment = await _context.Attachments.FirstOrDefaultAsync(a => a.AttachmentId == id);
 
             if (attachment == null)
             {

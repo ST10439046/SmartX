@@ -21,7 +21,8 @@ namespace SmartIotApi.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<CommandHistory>>> GetCommandHistories()
         {
-            return await _context.CommandHistories.Include(c => c.SensorMacNavigation).ToListAsync();
+            // Note: SensorMacNavigation is JsonIgnored to prevent circular reference.
+            return await _context.CommandHistories.ToListAsync();
         }
 
         /// <summary>
@@ -30,9 +31,8 @@ namespace SmartIotApi.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<CommandHistory>> GetCommandHistory(int id)
         {
-            var commandHistory = await _context.CommandHistories
-                .Include(c => c.SensorMacNavigation)
-                .FirstOrDefaultAsync(c => c.CommandId == id);
+            // Note: SensorMacNavigation is JsonIgnored to prevent circular reference.
+            var commandHistory = await _context.CommandHistories.FirstOrDefaultAsync(c => c.CommandId == id);
 
             if (commandHistory == null)
             {
