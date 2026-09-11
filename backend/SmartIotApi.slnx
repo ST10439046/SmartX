@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="../SmartIotFrontEndApp/smartiotfrontendapp.esproj">
+    <Build />
+    <Deploy />
+  </Project>
+  <Project Path="SmartIotApi.csproj" />
+</Solution>
