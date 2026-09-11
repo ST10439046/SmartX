@@ -31,7 +31,9 @@ namespace SmartIotApi
                         .WithOrigins(
                             "http://localhost:5173",
                             "http://localhost:3000",
-                            "http://localhost:59759")
+                            "http://localhost:59759",
+                            "http://localhost:59760",
+                            "http://localhost:5174")
                         .AllowAnyHeader()
                         .AllowAnyMethod();
                 });
