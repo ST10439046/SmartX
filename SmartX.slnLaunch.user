@@ -1,0 +1,16 @@
+[
+  {
+    "Name": "New Profile",
+    "Projects": [
+      {
+        "Path": "..\\SmartX\\backend\\SmartIotApi.csproj",
+        "Action": "Start",
+        "DebugTarget": "http"
+      },
+      {
+        "Path": "frontend\\smartiotfrontendapp.esproj",
+        "Action": "Start"
+      }
+    ]
+  }
+]

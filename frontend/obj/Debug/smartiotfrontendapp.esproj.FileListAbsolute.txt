@@ -1,1 +1,2 @@
 C:\Users\Shuayb\source\repos\SmartIotFrontEndApp\obj\Debug\smartiotfrontendapp.esproj.CoreCompileInputs.cache
+C:\Users\Shuayb\source\repos\emkndn-prog7312-g2-2026-prog7312-poe-st10439046\frontend\obj\Debug\smartiotfrontendapp.esproj.CoreCompileInputs.cache

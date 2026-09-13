@@ -3,11 +3,9 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <DebuggerFlavor>LaunchJsonDebugger</DebuggerFlavor>
     <LaunchJsonTarget>{
-  "name": "localhost (Chrome)",
+  "name": "Profile 1",
   "type": "chrome",
-  "request": "launch",
-  "url": "http://localhost:59759",
-  "webRoot": "C:\\Users\\Shuayb\\source\\repos\\SmartIotFrontEndApp"
+  "request": "launch"
 }</LaunchJsonTarget>
   </PropertyGroup>
 </Project>
