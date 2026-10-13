@@ -1159,3 +1159,53 @@ Example override request:
 ## Continuous integration
 
 The workflow at `.github/workflows/ci.yml` runs on pushes and pull requests targeting `master` or `main`. It restores and builds the .NET 10 API, runs discovered .NET test projects if present, installs frontend dependencies with `npm ci`, runs ESLint, and creates a Vite production build. Check the Actions tab for the actual run result.
+
+
+---
+
+# Docker deployment (frontend + API + SQL Server)
+
+The repository includes a Linux-container Docker Compose stack. It runs three application services plus a one-shot database bootstrap container:
+
+- **frontend**: production Vite/React build served by Nginx on port 8088 by default.
+- **backend**: .NET 10 API on port 5231 by default.
+- **sqlserver**: SQL Server 2022 Developer in its own container, with a persistent Docker volume.
+- **database-init**: waits for SQL Server, then runs `database/init/001-create-database.sql` to create `SmartIot` if it does not exist.
+
+On the first API startup, EF Core `EnsureCreated()` builds the tables and relationships from the current `SmartIotContext` model, including `Sensors`, `TelemetryData`, `ActiveAlerts`, `CommandHistory`, `Attachments`, `DeploymentNodes`, `NetworkTopology`, `AlertRules`, and `CommandDeviceStates`. The API also seeds demo sensors and telemetry as in development mode.
+
+## Start on Windows
+
+Run these commands from the repository root in Command Prompt:
+
+```cmd
+copy .env.example .env
+notepad .env
+docker compose up --build -d
+docker compose ps
+docker compose logs -f backend
+```
+
+Before starting, change `MSSQL_SA_PASSWORD` in `.env` to a strong password that meets SQL Server's complexity requirements. Open the app at `http://localhost:8088`. The API is also exposed at `http://localhost:5231`, and SQL Server is exposed on port 1433 by default.
+
+To connect from SSMS, use server `localhost,1433`, SQL Server Authentication, login `sa`, and the password from `.env`. Select the `SmartIot` database.
+
+The SQL data is persisted in the `smartx-sql-data` Docker volume. Stopping the stack with `docker compose down` preserves the database. **`docker compose down -v` deletes the persistent database volume and all data stored in it.** The container database is separate from any SQL Server instance already installed on the Windows host. Existing host data is not automatically copied into the container.
+
+## Database setup scripts
+
+- `database/init/001-create-database.sql`: safe, repeatable creation of the `SmartIot` database for a new SQL Server container. EF Core creates the full schema from the application models on first API startup.
+- `database/command-stream-alert-settings.sql`: upgrade script for an existing `SmartIot` database that already contains the core tables but predates the command-stream tables. Run it in SSMS against the existing `SmartIot` database before using the command-stream alert settings on that older database. It creates `AlertRules` and `CommandDeviceStates` and provisions sensor-specific defaults.
+
+## Sensor-specific alert defaults
+
+When the command-stream dashboard loads, each sensor that has no existing sensor-scoped rules receives defaults based on its `Category`:
+
+| Sensor category | Default metrics and thresholds |
+| --- | --- |
+| Environmental | Temperature >= 40 (critical), temperature <= 0 (warning), humidity >= 85 (warning), moisture < 20 (warning) |
+| Power | Power wattage >= 1000 (critical), power wattage <= 0 (warning) |
+| Actuator | Valve state >= 2 or < 0 (critical), because expected simulated states are 0 or 1 |
+| Other categories | Generic reading >= 100 or < 0 (warning) |
+
+Defaults are tied to the sensor's MAC address. Rules can be edited, disabled, or deleted from the command-stream page, and operators can still create an all-sensors rule intentionally. Thresholds should be tuned to the actual units and capabilities of deployed hardware. Actuator commands remain simulated and do not operate physical equipment.
