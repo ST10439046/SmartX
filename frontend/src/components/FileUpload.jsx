@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { Upload, X, CheckCircle, AlertCircle } from 'lucide-react';
 
 const FileUpload = ({ onFileSelect, maxSize = 10 * 1024 * 1024, accept = '*' }) => {
