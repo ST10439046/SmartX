@@ -78,8 +78,10 @@ function CommandStreamPage() {
       const response = await action();
       setNotice(response.data?.message || 'Action completed.');
       await loadDashboard();
+      return true;
     } catch (actionError) {
       setError(actionError.response?.data?.message || 'The requested action failed. Check that the SQL setup script has been run.');
+      return false;
     } finally {
       setBusy(false);
     }
@@ -132,10 +134,10 @@ function CommandStreamPage() {
       sensorMac: ruleForm.sensorMac || null,
       threshold: Number(ruleForm.threshold),
     };
-    await runAction(() => editingRuleId
+    const saved = await runAction(() => editingRuleId
       ? apiClient.put(`/api/commandstream/alert-rules/${editingRuleId}`, payload)
       : apiClient.post('/api/commandstream/alert-rules', payload));
-    resetRuleForm();
+    if (saved) resetRuleForm();
   };
 
   const deleteRule = (id) => runAction(async () => {
