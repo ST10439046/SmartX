@@ -1,3 +1,4 @@
+// Hook barrel: centralises exports for reusable React hooks shared across pages and components.
 import { useState, useCallback } from 'react';
 
 /**
