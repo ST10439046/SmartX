@@ -1,4 +1,3 @@
-import React from 'react';
 import { Trash2, AlertCircle, Loader2 } from 'lucide-react';
 
 const SensorDeleteDialog = ({ isOpen, sensor, onConfirm, onCancel, isDeleting = false }) => {
