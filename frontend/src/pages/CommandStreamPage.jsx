@@ -1,3 +1,4 @@
+// Command-stream page: provides the interface for interacting with the sensor command stream and its history.
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Activity, AlertTriangle, ArrowDownToLine, Bot, AlertCircle, Clock3, Command, RefreshCw, Search, ShieldCheck, Undo2, Zap, BellRing, Pencil, Trash2, Save, X } from 'lucide-react';
 import apiClient from '../services/apiClient';
