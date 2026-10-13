@@ -1,3 +1,4 @@
+// Entity Framework Core database context: defines the application's SQL Server connection model and entity-to-table mappings.
 ﻿using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
