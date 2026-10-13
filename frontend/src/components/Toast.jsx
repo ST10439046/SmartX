@@ -1,4 +1,3 @@
-import React from 'react';
 import { X, Check, AlertCircle, Info } from 'lucide-react';
 
 const Toast = ({ notification, onDismiss }) => {
