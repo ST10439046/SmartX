@@ -1,3 +1,4 @@
+// Real-time command service: contains the reusable logic for coordinating commands sent to sensor clients.
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
