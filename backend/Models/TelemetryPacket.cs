@@ -1,3 +1,4 @@
+// Telemetry packet model: describes the payload shape used when sensor readings arrive as a packet.
 using System;
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
