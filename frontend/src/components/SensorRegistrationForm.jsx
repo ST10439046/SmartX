@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import { Loader2, CheckCircle } from 'lucide-react';
 import { useForm, useNotification } from '../hooks';
 import FileUpload from './FileUpload';
@@ -16,7 +16,6 @@ const getFileType = (filename) => {
 const SensorRegistrationForm = ({ onSubmitSuccess }) => {
   const { show } = useNotification();
   const [attachedFiles, setAttachedFiles] = useState([]);
-  const resetFormRef = useRef(() => {});
 
   const validate = (name, value) => {
     switch (name) {
@@ -60,7 +59,7 @@ const SensorRegistrationForm = ({ onSubmitSuccess }) => {
       category: '',
       description: '',
     },
-    async (formValues) => {
+    async (formValues, resetForm) => {
       try {
         // Prepare sensor data according to backend structure
         const sensorData = {
@@ -100,7 +99,7 @@ const SensorRegistrationForm = ({ onSubmitSuccess }) => {
           }
         }
 
-        resetFormRef.current();
+        resetForm();
         setAttachedFiles([]);
         onSubmitSuccess?.();
       } catch (error) {
@@ -115,8 +114,6 @@ const SensorRegistrationForm = ({ onSubmitSuccess }) => {
     },
     validate
   );
-
-  resetFormRef.current = reset;
 
   const handleFileSelect = (files) => {
     setAttachedFiles(files);
