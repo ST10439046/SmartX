@@ -1,3 +1,4 @@
+// Deployment-node API controller: manages the deployment locations or nodes associated with sensors.
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SmartIotApi.Models;
