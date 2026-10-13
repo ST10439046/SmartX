@@ -141,7 +141,7 @@ public sealed class CommandStreamController : ControllerBase
         });
         await _db.SaveChangesAsync(ct);
         _stream.RegisterDevices(new[] { sensor });
-        _stream.RecordCommand(mac, command, previousState == "UNKNOWN" ? inverse : previousState);
+        _stream.RecordCommand(mac, command, previousState);
 
         return Ok(new
         {
