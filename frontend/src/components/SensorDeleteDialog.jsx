@@ -1,3 +1,4 @@
+// Sensor delete dialog: asks the user to confirm a destructive sensor action before it is performed.
 import { Trash2, AlertCircle, Loader2 } from 'lucide-react';
 
 const SensorDeleteDialog = ({ isOpen, sensor, onConfirm, onCancel, isDeleting = false }) => {
