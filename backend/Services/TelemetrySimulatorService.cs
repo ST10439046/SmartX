@@ -1,3 +1,4 @@
+// Telemetry simulator service: creates sample sensor readings for development scenarios when the environment permits it.
 using System;
 using System.Diagnostics;
 using System.Net.Http;
