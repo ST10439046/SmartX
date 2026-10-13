@@ -1,3 +1,4 @@
+// Sensor details page: presents the selected sensor's properties and related records.
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Loader, AlertCircle, RefreshCw, Download, Trash2 } from 'lucide-react';
