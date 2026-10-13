@@ -1,3 +1,4 @@
+// Sensor entity: represents a registered device and the identifying and deployment fields stored for it.
 ﻿using System;
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
