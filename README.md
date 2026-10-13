@@ -1186,7 +1186,7 @@ docker compose ps
 docker compose logs -f backend
 ```
 
-Before starting, change `MSSQL_SA_PASSWORD` in `.env` to a strong password that meets SQL Server's complexity requirements. Open the app at `http://localhost:8088`. The API is also exposed at `http://localhost:5231`, and SQL Server is exposed on port 1433 by default.
+Before starting, change `MSSQL_SA_PASSWORD` in `.env` to a strong password that meets SQL Server's complexity requirements. Open the app at `http://localhost:8088`. The API is also exposed at `http://localhost:5231`, and SQL Server is exposed on host port 14330 by default (container port 1433), avoiding a clash with a SQL Server instance already installed on Windows.
 
 To connect from SSMS, use server `localhost,1433`, SQL Server Authentication, login `sa`, and the password from `.env`. Select the `SmartIot` database.
 
