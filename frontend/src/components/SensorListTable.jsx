@@ -1,14 +1,7 @@
-import React from 'react';
 import { Edit2, Trash2, Eye, CheckCircle, XCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const SensorListTable = ({ sensors, onEdit, onDelete }) => {
-  const getStatusColor = (isActive) => {
-    return isActive
-      ? 'bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-      : 'bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400';
-  };
-
   const getCategoryColor = (category) => {
     const colors = {
       Environmental: 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
