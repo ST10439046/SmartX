@@ -31,7 +31,7 @@ public partial class SmartIotContext : DbContext
 
     // Connection settings are supplied by dependency injection and configuration.
     // Do not embed workstation credentials or override the Docker connection string.
-protected override void OnModelCreating(ModelBuilder modelBuilder)
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<ActiveAlert>(entity =>
         {
