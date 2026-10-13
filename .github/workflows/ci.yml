@@ -45,7 +45,7 @@ jobs:
             echo "No dedicated .NET test projects found yet; backend build validation completed."
           else
             for project in "${test_projects[@]}"; do
-              dotnet test "$project" --configuration Release --no-restore
+              dotnet test "$project" --configuration Release
             done
           fi
 
