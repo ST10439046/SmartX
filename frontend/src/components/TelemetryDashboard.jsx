@@ -543,18 +543,6 @@ const TelemetryDashboard = () => {
         (sensor) => !isSensorActive(sensor)
     ).length;
 
-    const onlineSensors = sensors.filter(
-        (sensor) =>
-            isSensorActive(sensor) &&
-            isSensorOnline(sensor)
-    ).length;
-
-    const offlineSensors = sensors.filter(
-        (sensor) =>
-            isSensorActive(sensor) &&
-            !isSensorOnline(sensor)
-    ).length;
-
 
     // =================================================
     // SIMULATION PAYLOAD

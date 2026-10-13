@@ -22,6 +22,13 @@ BEGIN
 END;
 GO
 
+-- Remove only the two legacy sample rules that were global. They are replaced
+-- above with per-sensor rules. Operator-created global rules are left untouched.
+DELETE FROM dbo.AlertRules
+WHERE SensorMAC IS NULL
+  AND Name IN ('High temperature demo', 'Low moisture demo');
+GO
+
 IF OBJECT_ID(N'dbo.CommandDeviceStates', N'U') IS NULL
 BEGIN
     CREATE TABLE dbo.CommandDeviceStates
@@ -35,12 +42,60 @@ BEGIN
 END;
 GO
 
--- Optional starter rules. Run only if these demo rules do not already exist.
-IF NOT EXISTS (SELECT 1 FROM dbo.AlertRules WHERE Name = 'High temperature demo')
+-- Provision sensor-specific defaults according to each sensor's category.
+-- The API also provisions these rules for newly registered sensors.
+-- Defaults are intentionally scoped to SensorMAC, not global rules.
+IF OBJECT_ID(N'dbo.Sensors', N'U') IS NOT NULL
+BEGIN
+    -- Environmental devices: temperature and common humidity/moisture metrics.
     INSERT dbo.AlertRules (Name, SensorMAC, DataType, Comparison, Threshold, Severity, IsEnabled)
-    VALUES ('High temperature demo', NULL, 'temperature', '>=', 40, 'critical', 1);
+    SELECT CONCAT(COALESCE(NULLIF(s.NodeID, ''), s.MACAddress), ' temperature high'), s.MACAddress, 'temperature', '>=', 40, 'critical', 1
+    FROM dbo.Sensors s
+    WHERE LOWER(ISNULL(s.Category, '')) LIKE '%environment%'
+      AND NOT EXISTS (SELECT 1 FROM dbo.AlertRules r WHERE r.SensorMAC = s.MACAddress AND LOWER(r.DataType) = 'temperature' AND r.Comparison = '>=' AND r.Threshold = 40);
 
-IF NOT EXISTS (SELECT 1 FROM dbo.AlertRules WHERE Name = 'Low moisture demo')
     INSERT dbo.AlertRules (Name, SensorMAC, DataType, Comparison, Threshold, Severity, IsEnabled)
-    VALUES ('Low moisture demo', NULL, 'moisture', '<', 20, 'warning', 1);
+    SELECT CONCAT(COALESCE(NULLIF(s.NodeID, ''), s.MACAddress), ' temperature low'), s.MACAddress, 'temperature', '<=', 0, 'warning', 1
+    FROM dbo.Sensors s
+    WHERE LOWER(ISNULL(s.Category, '')) LIKE '%environment%'
+      AND NOT EXISTS (SELECT 1 FROM dbo.AlertRules r WHERE r.SensorMAC = s.MACAddress AND LOWER(r.DataType) = 'temperature' AND r.Comparison = '<=' AND r.Threshold = 0);
+
+    INSERT dbo.AlertRules (Name, SensorMAC, DataType, Comparison, Threshold, Severity, IsEnabled)
+    SELECT CONCAT(COALESCE(NULLIF(s.NodeID, ''), s.MACAddress), ' humidity high'), s.MACAddress, 'humidity', '>=', 85, 'warning', 1
+    FROM dbo.Sensors s
+    WHERE LOWER(ISNULL(s.Category, '')) LIKE '%environment%'
+      AND NOT EXISTS (SELECT 1 FROM dbo.AlertRules r WHERE r.SensorMAC = s.MACAddress AND LOWER(r.DataType) = 'humidity' AND r.Comparison = '>=' AND r.Threshold = 85);
+
+    INSERT dbo.AlertRules (Name, SensorMAC, DataType, Comparison, Threshold, Severity, IsEnabled)
+    SELECT CONCAT(COALESCE(NULLIF(s.NodeID, ''), s.MACAddress), ' moisture low'), s.MACAddress, 'moisture', '<', 20, 'warning', 1
+    FROM dbo.Sensors s
+    WHERE LOWER(ISNULL(s.Category, '')) LIKE '%environment%'
+      AND NOT EXISTS (SELECT 1 FROM dbo.AlertRules r WHERE r.SensorMAC = s.MACAddress AND LOWER(r.DataType) = 'moisture' AND r.Comparison = '<' AND r.Threshold = 20);
+
+    -- Power devices: overload and non-positive readings.
+    INSERT dbo.AlertRules (Name, SensorMAC, DataType, Comparison, Threshold, Severity, IsEnabled)
+    SELECT CONCAT(COALESCE(NULLIF(s.NodeID, ''), s.MACAddress), ' power overload'), s.MACAddress, 'powerWattage', '>=', 1000, 'critical', 1
+    FROM dbo.Sensors s
+    WHERE LOWER(ISNULL(s.Category, '')) LIKE '%power%'
+      AND NOT EXISTS (SELECT 1 FROM dbo.AlertRules r WHERE r.SensorMAC = s.MACAddress AND LOWER(r.DataType) = LOWER('powerWattage') AND r.Comparison = '>=' AND r.Threshold = 1000);
+
+    INSERT dbo.AlertRules (Name, SensorMAC, DataType, Comparison, Threshold, Severity, IsEnabled)
+    SELECT CONCAT(COALESCE(NULLIF(s.NodeID, ''), s.MACAddress), ' power invalid'), s.MACAddress, 'powerWattage', '<=', 0, 'warning', 1
+    FROM dbo.Sensors s
+    WHERE LOWER(ISNULL(s.Category, '')) LIKE '%power%'
+      AND NOT EXISTS (SELECT 1 FROM dbo.AlertRules r WHERE r.SensorMAC = s.MACAddress AND LOWER(r.DataType) = LOWER('powerWattage') AND r.Comparison = '<=' AND r.Threshold = 0);
+
+    -- Actuator state values are normally 0 or 1; values outside that range are suspicious.
+    INSERT dbo.AlertRules (Name, SensorMAC, DataType, Comparison, Threshold, Severity, IsEnabled)
+    SELECT CONCAT(COALESCE(NULLIF(s.NodeID, ''), s.MACAddress), ' actuator state high'), s.MACAddress, 'valveState', '>=', 2, 'critical', 1
+    FROM dbo.Sensors s
+    WHERE LOWER(ISNULL(s.Category, '')) LIKE '%actuator%'
+      AND NOT EXISTS (SELECT 1 FROM dbo.AlertRules r WHERE r.SensorMAC = s.MACAddress AND LOWER(r.DataType) = 'valvestate' AND r.Comparison = '>=' AND r.Threshold = 2);
+
+    INSERT dbo.AlertRules (Name, SensorMAC, DataType, Comparison, Threshold, Severity, IsEnabled)
+    SELECT CONCAT(COALESCE(NULLIF(s.NodeID, ''), s.MACAddress), ' actuator state low'), s.MACAddress, 'valveState', '<', 0, 'critical', 1
+    FROM dbo.Sensors s
+    WHERE LOWER(ISNULL(s.Category, '')) LIKE '%actuator%'
+      AND NOT EXISTS (SELECT 1 FROM dbo.AlertRules r WHERE r.SensorMAC = s.MACAddress AND LOWER(r.DataType) = 'valvestate' AND r.Comparison = '<' AND r.Threshold = 0);
+END;
 GO

@@ -22,6 +22,7 @@ public sealed class CommandStreamController : ControllerBase
     public async Task<IActionResult> Dashboard(CancellationToken ct)
     {
         var sensors = await _db.Sensors.AsNoTracking().ToListAsync(ct);
+        await EnsureDefaultRulesAsync(sensors, ct);
         _stream.RegisterDevices(sensors);
         var telemetry = await _db.TelemetryData.AsNoTracking().OrderByDescending(x => x.Timestamp).Take(200).ToListAsync(ct);
         var alerts = await _db.ActiveAlerts.AsNoTracking().Where(x => x.IsResolved != true)
@@ -43,6 +44,7 @@ public sealed class CommandStreamController : ControllerBase
         var mac = request.SensorMac.Trim();
         var sensor = await _db.Sensors.AsNoTracking().FirstOrDefaultAsync(s => s.Macaddress == mac, ct);
         if (sensor is null) return NotFound(new { message = "Sensor was not found." });
+        await EnsureDefaultRulesAsync(new[] { sensor }, ct);
 
         var type = request.DataType.Trim();
         var timestamp = request.Timestamp ?? DateTime.UtcNow;
@@ -186,8 +188,12 @@ public sealed class CommandStreamController : ControllerBase
     }
 
     [HttpGet("alert-rules")]
-    public async Task<IActionResult> GetAlertRules(CancellationToken ct) =>
-        Ok(await _db.AlertRules.AsNoTracking().OrderBy(r => r.Name).ToListAsync(ct));
+    public async Task<IActionResult> GetAlertRules(CancellationToken ct)
+    {
+        var sensors = await _db.Sensors.AsNoTracking().ToListAsync(ct);
+        await EnsureDefaultRulesAsync(sensors, ct);
+        return Ok(await _db.AlertRules.AsNoTracking().OrderBy(r => r.Name).ToListAsync(ct));
+    }
 
     [HttpPost("alert-rules")]
     public async Task<IActionResult> CreateAlertRule(AlertRuleRequest request, CancellationToken ct)
@@ -269,6 +275,65 @@ public sealed class CommandStreamController : ControllerBase
 
     [HttpGet("metrics")]
     public IActionResult Metrics() => Ok(_stream.GetCommandMetrics());
+
+    private async Task EnsureDefaultRulesAsync(IEnumerable<Sensor> sensors, CancellationToken ct)
+    {
+        var additions = new List<AlertRule>();
+
+        foreach (var sensor in sensors)
+        {
+            // Defaults are provisioned once per sensor. A sensor with existing rules keeps
+            // its customized configuration instead of having missing defaults re-added.
+            if (await _db.AlertRules.AnyAsync(r => r.SensorMac == sensor.Macaddress, ct))
+                continue;
+
+            var category = sensor.Category?.Trim().ToLowerInvariant() ?? string.Empty;
+            var label = sensor.NodeId?.Trim();
+            if (string.IsNullOrWhiteSpace(label)) label = sensor.Macaddress;
+
+            void Add(string metric, string comparison, double threshold, string severity, string description)
+            {
+                additions.Add(new AlertRule
+                {
+                    Name = $"{label} {description}",
+                    SensorMac = sensor.Macaddress,
+                    DataType = metric,
+                    Comparison = comparison,
+                    Threshold = threshold,
+                    Severity = severity,
+                    IsEnabled = true,
+                    CreatedAt = DateTime.UtcNow
+                });
+            }
+
+            if (category.Contains("environment"))
+            {
+                Add("temperature", ">=", 40, "critical", "temperature high");
+                Add("temperature", "<=", 0, "warning", "temperature low");
+                Add("humidity", ">=", 85, "warning", "humidity high");
+                Add("moisture", "<", 20, "warning", "moisture low");
+            }
+            else if (category.Contains("power"))
+            {
+                Add("powerWattage", ">=", 1000, "critical", "power overload");
+                Add("powerWattage", "<=", 0, "warning", "power reading invalid");
+            }
+            else if (category.Contains("actuator"))
+            {
+                Add("valveState", ">=", 2, "critical", "actuator state invalid high");
+                Add("valveState", "<", 0, "critical", "actuator state invalid low");
+            }
+            else
+            {
+                Add("reading", ">=", 100, "warning", "reading high");
+                Add("reading", "<", 0, "warning", "reading below zero");
+            }
+        }
+
+        if (additions.Count == 0) return;
+        _db.AlertRules.AddRange(additions);
+        await _db.SaveChangesAsync(ct);
+    }
 
     private async Task<string?> ValidateRule(AlertRuleRequest request, CancellationToken ct)
     {

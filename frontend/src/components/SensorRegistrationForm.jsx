@@ -59,7 +59,7 @@ const SensorRegistrationForm = ({ onSubmitSuccess }) => {
       category: '',
       description: '',
     },
-    async (formValues) => {
+    async (formValues, resetForm) => {
       try {
         // Prepare sensor data according to backend structure
         const sensorData = {
@@ -99,7 +99,7 @@ const SensorRegistrationForm = ({ onSubmitSuccess }) => {
           }
         }
 
-        reset();
+        resetForm();
         setAttachedFiles([]);
         onSubmitSuccess?.();
       } catch (error) {

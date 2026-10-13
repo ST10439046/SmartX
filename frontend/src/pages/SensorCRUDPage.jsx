@@ -1,8 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   Plus,
-  Edit2,
-  Trash2,
   Search,
   ChevronLeft,
   ChevronRight,
@@ -27,7 +25,7 @@ const SensorCRUDPage = () => {
   const [sensorToDelete, setSensorToDelete] = useState(null);
 
   // Fetch all sensors
-  const fetchSensors = async () => {
+  const fetchSensors = useCallback(async () => {
     try {
       setLoading(true);
       const response = await sensorApi.getAllSensors();
@@ -41,12 +39,13 @@ const SensorCRUDPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [show]);
 
-  // Load sensors on mount
+  // Defer the initial request so the effect schedules external work rather than updating state inline.
   useEffect(() => {
-    fetchSensors();
-  }, []);
+    const initialLoad = window.setTimeout(() => { void fetchSensors(); }, 0);
+    return () => window.clearTimeout(initialLoad);
+  }, [fetchSensors]);
 
   // Filter sensors based on search term
   const filteredSensors = sensors.filter((sensor) => {
