@@ -45,13 +45,16 @@ function CommandStreamPage() {
   }, []);
 
   useEffect(() => {
-    loadDashboard();
+    const initialLoad = window.setTimeout(() => { void loadDashboard(); }, 0);
     const timer = window.setInterval(loadDashboard, 5000);
-    return () => window.clearInterval(timer);
+    return () => {
+      window.clearTimeout(initialLoad);
+      window.clearInterval(timer);
+    };
   }, [loadDashboard]);
 
-  const sensors = dashboard?.sensors || [];
-  const alerts = dashboard?.alerts || [];
+  const sensors = useMemo(() => dashboard?.sensors || [], [dashboard?.sensors]);
+  const alerts = useMemo(() => dashboard?.alerts || [], [dashboard?.alerts]);
   const stream = dashboard?.stream || {};
   const metrics = dashboard?.metrics || {};
   const commands = dashboard?.commands || [];
