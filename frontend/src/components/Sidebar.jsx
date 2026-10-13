@@ -1,4 +1,3 @@
-import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Radio, Activity, Zap, Lock, Menu, X, Database } from 'lucide-react';
 import { useState } from 'react';
