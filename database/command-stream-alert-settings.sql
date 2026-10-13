@@ -22,6 +22,13 @@ BEGIN
 END;
 GO
 
+-- Remove only the two legacy sample rules that were global. They are replaced
+-- above with per-sensor rules. Operator-created global rules are left untouched.
+DELETE FROM dbo.AlertRules
+WHERE SensorMAC IS NULL
+  AND Name IN ('High temperature demo', 'Low moisture demo');
+GO
+
 IF OBJECT_ID(N'dbo.CommandDeviceStates', N'U') IS NULL
 BEGIN
     CREATE TABLE dbo.CommandDeviceStates
