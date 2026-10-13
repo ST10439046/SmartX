@@ -1,3 +1,4 @@
+// Root React component: composes the app shell and configures the routes that connect navigation to page components.
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
 import { ToastContainer } from './components/Toast';
