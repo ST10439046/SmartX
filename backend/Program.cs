@@ -41,6 +41,7 @@ namespace SmartIotApi
 
             // Register the TelemetrySimulatorService for background telemetry generation
             // This service runs only in Development environment and sends random sensor data every 10 seconds
+            builder.Services.AddSingleton<RealtimeCommandService>();
             builder.Services.AddSingleton<TelemetrySimulatorService>();
             builder.Services.AddHostedService(provider => provider.GetRequiredService<TelemetrySimulatorService>());
 
