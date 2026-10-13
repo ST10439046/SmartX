@@ -1,3 +1,4 @@
+// Sensor form component: presents editable sensor fields and reports form submissions to its parent page.
 import { useState } from 'react';
 import { X, Loader2, AlertCircle } from 'lucide-react';
 import { useForm } from '../hooks';
