@@ -29,7 +29,7 @@ const Sidebar = () => {
       name: 'Real-Time Command Stream and History',
       icon: Activity,
       path: '/commands',
-      enabled: false,
+      enabled: true,
       description: 'Send and track real-time commands to sensors',
     },
     {
