@@ -1,3 +1,4 @@
+// Telemetry batch processor: groups and processes telemetry records so batches can be handled consistently.
 using System;
 using System.Collections.Generic;
 using System.Linq;
