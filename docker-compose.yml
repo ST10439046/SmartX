@@ -1,0 +1,75 @@
+name: smartx
+
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: smartx-sqlserver
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: Developer
+      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD:?Set MSSQL_SA_PASSWORD in .env (minimum 8 chars, upper/lower/digit/symbol)}
+    ports:
+      - "${SQLSERVER_PORT:-1433}:1433"
+    volumes:
+      - smartx-sql-data:/var/opt/mssql
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -C -Q \"SELECT 1\" -b -o /dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+    restart: unless-stopped
+
+  database-init:
+    image: mcr.microsoft.com/mssql-tools:latest
+    container_name: smartx-database-init
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    environment:
+      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD:?Set MSSQL_SA_PASSWORD in .env}
+    volumes:
+      - ./database/init:/scripts:ro
+    entrypoint: ["/bin/bash", "-c"]
+    command: >
+      'set -e;
+      if [ -x /opt/mssql-tools18/bin/sqlcmd ]; then SQLCMD=/opt/mssql-tools18/bin/sqlcmd;
+      else SQLCMD=/opt/mssql-tools/bin/sqlcmd; fi;
+      "$$SQLCMD" -S sqlserver -U sa -P "$$MSSQL_SA_PASSWORD" -C -b -i /scripts/001-create-database.sql;
+      echo "SmartIot database bootstrap completed."'
+    restart: "no"
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: smartx-api
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__DefaultConnection: "Server=sqlserver,1433;Database=SmartIot;User Id=sa;Password=${MSSQL_SA_PASSWORD:?Set MSSQL_SA_PASSWORD in .env};Encrypt=False;TrustServerCertificate=True;Connect Timeout=30"
+    ports:
+      - "${API_PORT:-5231}:8080"
+    volumes:
+      - smartx-attachments:/app/uploads
+    depends_on:
+      database-init:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: /api
+    container_name: smartx-frontend
+    ports:
+      - "${FRONTEND_PORT:-8088}:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  smartx-sql-data:
+  smartx-attachments:
