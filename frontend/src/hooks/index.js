@@ -79,27 +79,27 @@ export const useForm = (initialValues, onSubmit, validate) => {
     }
   }, [validate, values]);
 
+  const reset = useCallback(() => {
+    setValues(initialValues);
+    setErrors({});
+    setTouched({});
+  }, [initialValues]);
+
   const handleSubmit = useCallback(
     async (e) => {
       e.preventDefault();
       setIsSubmitting(true);
 
       try {
-        await onSubmit(values);
+        await onSubmit(values, reset);
       } catch (error) {
         console.error('Form submission error:', error);
       } finally {
         setIsSubmitting(false);
       }
     },
-    [values, onSubmit]
+    [values, onSubmit, reset]
   );
-
-  const reset = useCallback(() => {
-    setValues(initialValues);
-    setErrors({});
-    setTouched({});
-  }, [initialValues]);
 
   const setFieldValue = useCallback((name, value) => {
     setValues((prev) => ({
