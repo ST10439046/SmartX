@@ -1,3 +1,4 @@
+// Sensor reading model: represents a measured observation associated with a sensor.
 using System;
 
 namespace SmartIotApi.Models;
