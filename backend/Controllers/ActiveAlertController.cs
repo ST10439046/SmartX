@@ -1,3 +1,4 @@
+// Active-alert API controller: provides endpoints for accessing and maintaining active alert records.
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SmartIotApi.Models;
