@@ -1,3 +1,4 @@
+// Telemetry dashboard component: visualises sensor readings and summarises telemetry activity.
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
