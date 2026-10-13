@@ -1,3 +1,4 @@
+// Toast component: shows concise success, status, or error feedback without replacing the current page.
 import { X, Check, AlertCircle, Info } from 'lucide-react';
 
 const Toast = ({ notification, onDismiss }) => {
