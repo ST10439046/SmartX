@@ -9,7 +9,7 @@ services:
       MSSQL_PID: Developer
       MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD:?Set MSSQL_SA_PASSWORD in .env (minimum 8 chars, upper/lower/digit/symbol)}
     ports:
-      - "${SQLSERVER_PORT:-1433}:1433"
+      - "${SQLSERVER_PORT:-14330}:1433"
     volumes:
       - smartx-sql-data:/var/opt/mssql
     healthcheck:
