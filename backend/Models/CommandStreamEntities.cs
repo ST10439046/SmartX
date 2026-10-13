@@ -1,3 +1,4 @@
+// Command-stream models: define the request and response data structures used by command-stream operations.
 using Microsoft.EntityFrameworkCore;
 
 namespace SmartIotApi.Models;
