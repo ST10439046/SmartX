@@ -1172,7 +1172,7 @@ The repository includes a Linux-container Docker Compose stack. It runs three ap
 - **sqlserver**: SQL Server 2022 Developer in its own container, with a persistent Docker volume.
 - **database-init**: waits for SQL Server, then runs `database/init/001-create-database.sql` to create `SmartIot` if it does not exist.
 
-On the first API startup, EF Core `EnsureCreated()` builds the tables and relationships from the current `SmartIotContext` model, including `Sensors`, `TelemetryData`, `ActiveAlerts`, `CommandHistory`, `Attachments`, `DeploymentNodes`, `NetworkTopology`, `AlertRules`, and `CommandDeviceStates`. The API also seeds demo sensors and telemetry as in development mode.
+On the first API startup, EF Core `EnsureCreated()` builds the tables and relationships from the current `SmartIotContext` model, including `Sensors`, `TelemetryData`, `ActiveAlerts`, `CommandHistory`, `Attachments`, `DeploymentNodes`, `NetworkTopology`, `AlertRules`, and `CommandDeviceStates`. The API seeds demo sensors and telemetry when starting against an empty database.
 
 ## Start on Windows
 
