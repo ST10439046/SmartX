@@ -1,3 +1,4 @@
+// Sensor list table: displays sensor records in rows and exposes actions for managing each record.
 import { Edit2, Trash2, Eye, CheckCircle, XCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
