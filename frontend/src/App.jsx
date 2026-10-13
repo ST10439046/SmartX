@@ -6,6 +6,7 @@ import DashboardPage from './pages/DashboardPage';
 import SensorCRUDPage from './pages/SensorCRUDPage';
 import SensorDetailsPage from './pages/SensorDetailsPage';
 import ComingSoonPage from './pages/ComingSoonPage';
+import CommandStreamPage from './pages/CommandStreamPage';
 
 function App() {
   const { notifications, dismiss } = useNotification();
@@ -24,15 +25,7 @@ function App() {
               <Route path="/dashboard" element={<DashboardPage />} />
               <Route path="/sensors" element={<SensorCRUDPage />} />
               <Route path="/sensor/:macaddress" element={<SensorDetailsPage />} />
-              <Route
-                path="/commands"
-                element={
-                  <ComingSoonPage
-                    title="Real-Time Command Stream and History"
-                    description="Send commands to your sensors and view the complete history of all sensor operations."
-                  />
-                }
-              />
+              <Route path="/commands" element={<CommandStreamPage />} />
               <Route
                 path="/topology"
                 element={
