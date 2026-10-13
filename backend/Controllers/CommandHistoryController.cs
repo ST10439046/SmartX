@@ -1,3 +1,4 @@
+// Command-history API controller: exposes stored command records for review and management.
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SmartIotApi.Models;
