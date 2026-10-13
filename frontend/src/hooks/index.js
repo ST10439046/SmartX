@@ -124,7 +124,7 @@ export const useForm = (initialValues, onSubmit, validate) => {
 /**
  * Hook for API loading states
  */
-export const useAsync = (asyncFunction, immediate = true) => {
+export const useAsync = (asyncFunction) => {
   const [status, setStatus] = useState('idle');
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
