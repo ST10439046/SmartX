@@ -1,3 +1,4 @@
+// Attachment API controller: coordinates file uploads and downloads with attachment metadata and sensor associations.
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SmartIotApi.Models;
