@@ -1,3 +1,4 @@
+// Network topology model: represents the connections or structure of the sensor network.
 ﻿using System;
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
