@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { X, Loader2, AlertCircle } from 'lucide-react';
 import { useForm } from '../hooks';
 
