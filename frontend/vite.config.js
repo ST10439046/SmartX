@@ -1,3 +1,4 @@
+// Vite configuration: defines how the frontend development server and production assets are built.
 import { defineConfig } from 'vite';
 import plugin from '@vitejs/plugin-react';
 
