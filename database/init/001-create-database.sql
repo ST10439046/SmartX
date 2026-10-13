@@ -5,7 +5,5 @@
   Safe to rerun: an existing SmartIot database is preserved.
 */
 IF DB_ID(N'SmartIot') IS NULL
-BEGIN
-    CREATE DATABASE [SmartIot];
-END;
+    EXEC(N'CREATE DATABASE [SmartIot]');
 GO
