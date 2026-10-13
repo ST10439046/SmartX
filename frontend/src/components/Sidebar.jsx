@@ -157,7 +157,7 @@ const Sidebar = () => {
             </p>
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 bg-success-500 rounded-full animate-pulse"></div>
-              <span>Connected to localhost:5231</span>
+              <span>API requests routed through the app gateway</span>
             </div>
           </div>
         </div>
