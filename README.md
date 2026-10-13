@@ -1075,3 +1075,87 @@ The current implementation establishes the Sensor Data Ingestion and Telemetry p
 **Smart-X IoT Platform**
 **PROG7312 POE 2026**
 **ST10439046**
+
+
+---
+
+# Part 2: Real-Time Command Stream and Device Management
+
+Pillar 2 is available from the **Real-Time Command Stream and History** navigation entry. Pillar 1 remains available, and Pillar 3 remains disabled.
+
+## Part 2 implementation
+
+The API exposes the following routes:
+
+| Method | Endpoint | Purpose |
+| --- | --- | --- |
+| GET | `/api/commandstream/dashboard` | Dashboard snapshot, sensors, active alerts, recent telemetry, command history and in-memory metrics |
+| POST | `/api/commandstream/telemetry` | Validate a sensor packet, queue it, prioritize critical packets, persist telemetry and create a deduplicated active alert |
+| POST | `/api/commandstream/commands` | Record a simulated manual override for an existing sensor |
+| POST | `/api/commandstream/undo` | Record the inverse of the latest override in the current API session |
+| GET | `/api/commandstream/device/{sensorMac}` | Look up one device and return recent telemetry and commands |
+| GET | `/api/commandstream/insights` | Return threshold-based suggested actions |
+| POST | `/api/commandstream/search` | Record operator searches for simple repeated-search insights |
+| GET | `/api/commandstream/metrics` | Return stream data-structure counts |
+
+## Required C# data structures
+
+- `Queue<StreamPacket>`: routine packets are processed FIFO.
+- `PriorityQueue<StreamPacket, int>`: critical packets are dequeued before routine packets.
+- `Stack<CommandUndoEntry>`: stores the inverse of issued commands for an undo action.
+- `Dictionary<string, DeviceSnapshot>`: provides MAC-address keyed live device lookups.
+- `SortedDictionary<DateTime, List<TimelineEntry>>`: stores stream timeline entries by timestamp.
+- `HashSet<string>`: deduplicates active in-memory alert keys.
+
+These structures are in-memory and reset when the API process restarts. Existing SQL Server tables continue to store telemetry, active alerts and command history. No new database table is required for this implementation.
+
+## How to test Part 2
+
+1. Start SQL Server and ensure the existing SmartIot database is available to the API.
+2. Start the API from the backend project directory with `dotnet run`.
+3. Start the React app from `frontend` with `npm install` (first run only) and `npm run dev`.
+4. Open the app and select **Real-Time Command Stream and History**.
+5. Confirm that the device registry shows sensors already present in the database.
+6. Use **Test critical alert**. It sends a low-moisture demo packet, persists the telemetry, and creates an active alert if that sensor does not already have the same unresolved error code.
+7. Issue ON/OFF or actuator OPEN/CLOSE/START/STOP commands. Confirm that each appears in command history.
+8. Select **Undo last**. Confirm that an inverse command is added to the command history. The undo stack is session-only.
+9. Search for a device and use category and active-alert filters.
+10. Check Automated Insights. A moisture/humidity value below 20, temperature at least 40, or power/wattage at least 1000 produces a threshold suggestion.
+11. Verify API endpoints with Swagger/OpenAPI when running in Development, or call the routes above from Postman.
+
+Example request body for a normal telemetry packet:
+
+```json
+{
+  "sensorMac": "00:1A:2B:3C:4D:5E",
+  "dataType": "temperature",
+  "dataValue": 26.5
+}
+```
+
+Example request body for a critical test packet:
+
+```json
+{
+  "sensorMac": "00:1A:2B:3C:4D:5E",
+  "dataType": "moisture",
+  "dataValue": 12,
+  "isCritical": true,
+  "errorCode": "DEMO-MOISTURE-LOW"
+}
+```
+
+Example override request:
+
+```json
+{
+  "sensorMac": "00:1A:2B:3C:4D:60",
+  "commandType": "ON"
+}
+```
+
+**Safety note:** override commands are simulated and recorded in SQL Server. They do not operate physical relays, pumps, or valves. The queue and undo stack are currently process-local, so the undo history is cleared when the API restarts.
+
+## Continuous integration
+
+The workflow at `.github/workflows/ci.yml` runs on pushes and pull requests targeting `master` or `main`. It restores and builds the .NET 10 API, runs discovered .NET test projects if present, installs frontend dependencies with `npm ci`, runs ESLint, and creates a Vite production build. Check the Actions tab for the actual run result.
