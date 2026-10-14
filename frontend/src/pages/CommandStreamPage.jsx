@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Activity, AlertTriangle, ArrowDownToLine, Bot, AlertCircle, Clock3, Command, RefreshCw, Search, ShieldCheck, Undo2, Zap, BellRing, Pencil, Trash2, Save, X } from 'lucide-react';
 import apiClient from '../services/apiClient';
+import { createSingleFlight } from '../utils/singleFlight';
 
 const formatDate = (value) => value ? new Date(value).toLocaleString() : 'No readings yet';
 const displayDevice = (sensor) => sensor.nodeId || sensor.macaddress;
@@ -29,7 +30,7 @@ function CommandStreamPage() {
   const [lastUpdated, setLastUpdated] = useState(null);
   const [ruleForm, setRuleForm] = useState(blankRule);
   const [editingRuleId, setEditingRuleId] = useState(null);
-  const loadInProgress = useRef(false);
+  const loadDashboardFlight = useRef(createSingleFlight());
   const searchTimer = useRef(null);
   const mounted = useRef(true);
 
