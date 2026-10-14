@@ -34,9 +34,7 @@ function CommandStreamPage() {
   const searchTimer = useRef(null);
   const mounted = useRef(true);
 
-  const loadDashboard = useCallback(async () => {
-    if (loadInProgress.current) return;
-    loadInProgress.current = true;
+  const loadDashboard = useCallback(() => loadDashboardFlight.current(async () => {
     try {
       const [dashboardResponse, insightResponse] = await Promise.all([
         apiClient.get('/api/commandstream/dashboard'),
@@ -49,10 +47,8 @@ function CommandStreamPage() {
       setError('');
     } catch (loadError) {
       if (mounted.current) setError(loadError.response?.data?.message || 'Unable to load the command stream. Check the API and run the SQL setup script.');
-    } finally {
-      loadInProgress.current = false;
     }
-  }, []);
+  }), []);
 
   useEffect(() => {
     mounted.current = true;
