@@ -1,3 +1,4 @@
+// Coming-soon page: explains that a selected feature is not yet available in the current application build.
 import { Lock } from 'lucide-react';
 
 const ComingSoonPage = ({ title, description }) => {

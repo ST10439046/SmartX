@@ -1,3 +1,4 @@
+// Template sample model: defines the weather forecast shape returned by the demonstration endpoint.
 namespace SmartIotApi
 {
     public class WeatherForecast

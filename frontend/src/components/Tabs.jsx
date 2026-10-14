@@ -1,3 +1,4 @@
+// Tabs component: provides a reusable control for switching between related sections of a screen.
 import  { useState, createContext, useContext } from 'react';
 
 const TabsContext = createContext();

@@ -1,3 +1,4 @@
+// Sensor API controller: validates incoming requests and coordinates sensor CRUD operations through the application data layer.
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SmartIotApi.Models;

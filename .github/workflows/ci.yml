@@ -1,3 +1,4 @@
+# Continuous integration workflow: runs the configured validation steps when repository changes trigger CI.
 name: Smart-X CI
 
 on:

@@ -1,3 +1,4 @@
+// Command-stream API controller: handles HTTP requests that interact with the real-time sensor command feature.
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SmartIotApi.Models;

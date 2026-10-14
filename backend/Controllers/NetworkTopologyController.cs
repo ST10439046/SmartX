@@ -1,3 +1,4 @@
+// Network-topology API controller: handles requests for the application's sensor-network topology data.
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SmartIotApi.Models;

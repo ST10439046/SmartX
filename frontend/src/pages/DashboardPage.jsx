@@ -1,3 +1,4 @@
+// Dashboard page: assembles the main overview of sensor activity and telemetry for the user.
 import { useState } from 'react';
 import SensorRegistrationForm from '../components/SensorRegistrationForm';
 import TelemetryDashboard from '../components/TelemetryDashboard';

@@ -1,3 +1,4 @@
+// Sidebar component: renders primary navigation links and communicates which feature areas are available.
 import { Link, useLocation } from 'react-router-dom';
 import { Radio, Activity, Zap, Lock, Menu, X, Database } from 'lucide-react';
 import { useState } from 'react';

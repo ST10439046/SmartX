@@ -1,3 +1,4 @@
+// Command history entity: records commands and related details for later review.
 ﻿using System;
 using System.Collections.Generic;
 using System.Text.Json.Serialization;

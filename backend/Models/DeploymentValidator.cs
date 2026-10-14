@@ -1,3 +1,4 @@
+// Deployment validator: checks deployment data against the application's rules before it is used.
 using System;
 using System.Collections.Generic;
 

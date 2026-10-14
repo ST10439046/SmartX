@@ -1,3 +1,4 @@
+// Health endpoint: gives deployment tools and operators a simple way to confirm that the API is responding.
 using Microsoft.AspNetCore.Mvc;
 
 namespace SmartIotApi.Controllers;

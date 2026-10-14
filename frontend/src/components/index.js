@@ -1,3 +1,4 @@
+// Component barrel: re-exports shared UI components so other modules can import them from one location.
 export { default as Sidebar } from './Sidebar';
 export { default as Toast, ToastContainer } from './Toast';
 export { default as FileUpload } from './FileUpload';

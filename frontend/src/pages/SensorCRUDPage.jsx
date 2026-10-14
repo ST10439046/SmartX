@@ -1,3 +1,4 @@
+// Sensor management page: coordinates the user workflows for creating, listing, editing, and deleting sensors.
 import { useState, useEffect, useCallback } from 'react';
 import {
   Plus,

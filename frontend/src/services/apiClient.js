@@ -1,3 +1,4 @@
+// Shared API client: keeps HTTP configuration in one place and exposes resource-specific calls through Axios.
 import axios from 'axios';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? 'http://localhost:5231' : '');

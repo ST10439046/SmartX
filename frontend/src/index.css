@@ -1,3 +1,4 @@
+/* Global stylesheet: defines shared base styles and visual defaults used across the React application. */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

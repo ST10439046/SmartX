@@ -1,3 +1,4 @@
+// Sensor registration form: collects the fields needed to create a sensor record and submit it to the API.
 import { useState } from 'react';
 import { Loader2, CheckCircle } from 'lucide-react';
 import { useForm, useNotification } from '../hooks';

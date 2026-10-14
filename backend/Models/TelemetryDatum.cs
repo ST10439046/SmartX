@@ -1,3 +1,4 @@
+// Telemetry datum entity: represents a single measured value associated with a sensor and timestamp.
 ﻿using System;
 using System.Collections.Generic;
 using System.Text.Json.Serialization;

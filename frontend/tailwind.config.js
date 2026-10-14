@@ -1,3 +1,4 @@
+// Tailwind theme configuration: controls which files are scanned and which design tokens are available as utility classes.
 /** @type {import('tailwindcss').Config} */
 export default {
   content: [

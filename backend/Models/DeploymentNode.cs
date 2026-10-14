@@ -1,3 +1,4 @@
+// Deployment node entity: represents a location or logical node where sensors can be deployed.
 using System;
 using System.Collections.Generic;
 using System.Text.Json.Serialization;

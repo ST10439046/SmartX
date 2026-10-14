@@ -1,3 +1,4 @@
+// Telemetry API controller: exposes HTTP endpoints for retrieving and managing recorded sensor telemetry.
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SmartIotApi.Models;

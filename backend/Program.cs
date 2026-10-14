@@ -1,3 +1,4 @@
+// Application entry point: registers services, configures database access and middleware, maps API routes, and starts the ASP.NET Core host.
 
 using Microsoft.EntityFrameworkCore;
 using SmartIotApi.Models;

@@ -1,3 +1,4 @@
+// Attachment upload component: gathers a file and sensor association before sending the upload request.
 import { useState } from 'react';
 import { Upload, X, Loader, CheckCircle, AlertCircle } from 'lucide-react';
 import { attachmentApi } from '../services/apiClient';

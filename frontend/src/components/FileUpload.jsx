@@ -1,3 +1,4 @@
+// Reusable file upload component: manages file selection and displays upload-related controls or feedback.
 import { useRef, useState } from 'react';
 import { Upload, X, CheckCircle, AlertCircle } from 'lucide-react';
 

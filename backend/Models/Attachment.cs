@@ -1,3 +1,4 @@
+// Attachment entity: stores metadata linking an uploaded file to its related sensor or application record.
 ﻿using System;
 using System.Collections.Generic;
 using System.Text.Json.Serialization;

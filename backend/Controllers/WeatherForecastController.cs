@@ -1,3 +1,4 @@
+// Template sample controller: exposes the demonstration weather-forecast endpoint from the ASP.NET starter project.
 using Microsoft.AspNetCore.Mvc;
 
 namespace SmartIotApi.Controllers

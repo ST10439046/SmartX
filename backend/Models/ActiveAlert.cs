@@ -1,3 +1,4 @@
+// Active alert entity: describes an alert record that the application can store and display.
 ﻿using System;
 using System.Collections.Generic;
 using System.Text.Json.Serialization;

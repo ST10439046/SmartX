@@ -1,3 +1,4 @@
+// Upload request model: describes the form fields the API binds when a file attachment is submitted.
 ﻿using Microsoft.AspNetCore.Http;
 using System.ComponentModel.DataAnnotations;
 

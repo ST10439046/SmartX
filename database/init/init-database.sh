@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Database bootstrap: waits for SQL Server readiness and runs the initial SmartIot database SQL script.
 set -euo pipefail
 
 if [[ -x /opt/mssql-tools18/bin/sqlcmd ]]; then
