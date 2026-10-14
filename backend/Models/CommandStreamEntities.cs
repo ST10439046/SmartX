@@ -29,6 +29,7 @@ public partial class SmartIotContext
 {
     public virtual DbSet<AlertRule> AlertRules { get; set; } = null!;
     public virtual DbSet<CommandDeviceState> CommandDeviceStates { get; set; } = null!;
+    public virtual DbSet<OperatorActivity> OperatorActivities { get; set; } = null!;
 
     partial void OnModelCreatingPartial(ModelBuilder modelBuilder)
     {
@@ -47,6 +48,18 @@ public partial class SmartIotContext
             entity.Property(e => e.CreatedAt).HasColumnType("datetime").HasDefaultValueSql("(getdate())");
             entity.HasOne<Sensor>().WithMany().HasForeignKey(e => e.SensorMac)
                 .OnDelete(DeleteBehavior.SetNull).HasConstraintName("FK_AlertRules_Sensors");
+        });
+
+        modelBuilder.Entity<OperatorActivity>(entity =>
+        {
+            entity.ToTable("OperatorActivities");
+            entity.HasKey(e => e.OperatorActivityId);
+            entity.Property(e => e.ActivityType).HasMaxLength(20).IsUnicode(false).IsRequired();
+            entity.Property(e => e.SensorMac).HasMaxLength(17).IsUnicode(false).HasColumnName("SensorMAC");
+            entity.Property(e => e.Detail).HasMaxLength(500).IsRequired();
+            entity.Property(e => e.NormalizedDetail).HasMaxLength(500).IsRequired();
+            entity.Property(e => e.CreatedAt).HasColumnType("datetime2").HasDefaultValueSql("SYSUTCDATETIME()");
+            entity.HasIndex(e => new { e.SensorMac, e.ActivityType, e.CreatedAt });
         });
 
         modelBuilder.Entity<CommandDeviceState>(entity =>

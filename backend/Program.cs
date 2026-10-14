@@ -52,6 +52,24 @@ namespace SmartIotApi
             {
                 var dbContext = scope.ServiceProvider.GetRequiredService<SmartIotContext>();
                 dbContext.Database.EnsureCreated();
+                dbContext.Database.ExecuteSqlRaw(@"
+IF COL_LENGTH('dbo.ActiveAlerts', 'AcknowledgedAt') IS NULL
+    ALTER TABLE dbo.ActiveAlerts ADD AcknowledgedAt datetime2 NULL;
+IF COL_LENGTH('dbo.ActiveAlerts', 'AcknowledgedBy') IS NULL
+    ALTER TABLE dbo.ActiveAlerts ADD AcknowledgedBy nvarchar(120) NULL;
+IF OBJECT_ID('dbo.OperatorActivities', 'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.OperatorActivities (
+        OperatorActivityId bigint IDENTITY(1,1) NOT NULL CONSTRAINT PK_OperatorActivities PRIMARY KEY,
+        ActivityType varchar(20) NOT NULL,
+        SensorMAC varchar(17) NULL,
+        Detail nvarchar(500) NOT NULL,
+        NormalizedDetail nvarchar(500) NOT NULL,
+        CreatedAt datetime2 NOT NULL CONSTRAINT DF_OperatorActivities_CreatedAt DEFAULT SYSUTCDATETIME()
+    );
+    CREATE INDEX IX_OperatorActivities_SensorMAC_ActivityType_CreatedAt
+        ON dbo.OperatorActivities (SensorMAC, ActivityType, CreatedAt DESC);
+END");
                 SeedSampleData(dbContext);
             }
 

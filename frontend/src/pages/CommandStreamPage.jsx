@@ -1,7 +1,8 @@
 // Command-stream page: provides the interface for interacting with the sensor command stream and its history.
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Activity, AlertTriangle, ArrowDownToLine, Bot, AlertCircle, Clock3, Command, RefreshCw, Search, ShieldCheck, Undo2, Zap, BellRing, Pencil, Trash2, Save, X } from 'lucide-react';
 import apiClient from '../services/apiClient';
+import { createSingleFlight } from '../utils/singleFlight';
 
 const formatDate = (value) => value ? new Date(value).toLocaleString() : 'No readings yet';
 const displayDevice = (sensor) => sensor.nodeId || sensor.macaddress;
@@ -29,28 +30,35 @@ function CommandStreamPage() {
   const [lastUpdated, setLastUpdated] = useState(null);
   const [ruleForm, setRuleForm] = useState(blankRule);
   const [editingRuleId, setEditingRuleId] = useState(null);
+  const loadDashboardFlight = useRef(createSingleFlight());
+  const searchTimer = useRef(null);
+  const mounted = useRef(true);
 
-  const loadDashboard = useCallback(async () => {
+  const loadDashboard = useCallback(() => loadDashboardFlight.current(async () => {
     try {
       const [dashboardResponse, insightResponse] = await Promise.all([
         apiClient.get('/api/commandstream/dashboard'),
         apiClient.get('/api/commandstream/insights'),
       ]);
+      if (!mounted.current) return;
       setDashboard(dashboardResponse.data);
       setInsights(insightResponse.data);
       setLastUpdated(new Date());
       setError('');
     } catch (loadError) {
-      setError(loadError.response?.data?.message || 'Unable to load the command stream. Check the API and run the SQL setup script.');
+      if (mounted.current) setError(loadError.response?.data?.message || 'Unable to load the command stream. Check the API and run the SQL setup script.');
     }
-  }, []);
+  }), []);
 
   useEffect(() => {
+    mounted.current = true;
     const initialLoad = window.setTimeout(() => { void loadDashboard(); }, 0);
     const timer = window.setInterval(loadDashboard, 5000);
     return () => {
+      mounted.current = false;
       window.clearTimeout(initialLoad);
       window.clearInterval(timer);
+      if (searchTimer.current) window.clearTimeout(searchTimer.current);
     };
   }, [loadDashboard]);
 
@@ -93,12 +101,19 @@ function CommandStreamPage() {
 
   const issueCommand = (sensor, commandType) => runAction(() => apiClient.post('/api/commandstream/commands', { sensorMac: sensor.macaddress, commandType }));
   const undo = () => runAction(() => apiClient.post('/api/commandstream/undo'));
-  const searchChanged = async (value) => {
+  const searchChanged = (value) => {
     setQuery(value);
+    if (searchTimer.current) window.clearTimeout(searchTimer.current);
     if (value.trim().length >= 2) {
-      try { await apiClient.post('/api/commandstream/search', { query: value.trim() }); } catch { /* Search filtering still works if history logging is unavailable. */ }
+      searchTimer.current = window.setTimeout(async () => {
+        try { await apiClient.post('/api/commandstream/search', { query: value.trim() }); } catch { /* Search filtering still works if history logging is unavailable. */ }
+      }, 400);
     }
   };
+
+  const acknowledgeAlert = (alertId) => runAction(() =>
+    apiClient.post(`/api/commandstream/alerts/${alertId}/acknowledge`, { acknowledgedBy: 'Operator' })
+  );
 
   const simulateCritical = async () => {
     const target = filteredSensors[0] || sensors[0];
@@ -178,6 +193,17 @@ function CommandStreamPage() {
         <Metric icon={ArrowDownToLine} label="Routine queue" value={metrics.queueDepth ?? 0} hint="First-in, first-out ordering" />
         <Metric icon={ShieldCheck} label="Active alerts" value={alerts.length} hint="Unresolved alerts from SQL Server" />
       </div>
+
+      <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+        <div className="mb-4 flex items-center gap-3"><BellRing className="text-primary-600" size={21} /><div><h2 className="text-lg font-bold text-gray-900 dark:text-white">Active alerts</h2><p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Acknowledge alerts to confirm an operator has seen them. Acknowledgement does not clear the alert; threshold alerts resolve automatically when readings recover.</p></div></div>
+        <div className="space-y-3">
+          {alerts.map((alert) => <div key={alert.alertId} className="flex flex-col gap-3 rounded-xl border border-gray-200 p-4 dark:border-gray-800 sm:flex-row sm:items-center sm:justify-between">
+            <div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><p className="font-semibold text-gray-900 dark:text-white">{alert.errorCode || 'Sensor alert'}</p><span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${alert.acknowledgedAt ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300'}`}>{alert.acknowledgedAt ? `Acknowledged by ${alert.acknowledgedBy || 'Operator'}` : 'Needs acknowledgement'}</span></div><p className="mt-1 text-sm text-gray-600 dark:text-gray-300">{alert.description}</p><p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{alert.sensorMac} · {formatDate(alert.createdAt)}</p></div>
+            <button type="button" disabled={busy || Boolean(alert.acknowledgedAt)} onClick={() => acknowledgeAlert(alert.alertId)} className="shrink-0 rounded-lg border border-gray-300 px-3 py-2 text-xs font-semibold disabled:opacity-50 dark:border-gray-700">{alert.acknowledgedAt ? 'Acknowledged' : 'Acknowledge'}</button>
+          </div>)}
+          {alerts.length === 0 && <p className="rounded-xl border border-dashed border-gray-300 p-6 text-center text-sm text-gray-500 dark:border-gray-700">No active alerts. Alerts will appear when incoming telemetry breaches an enabled threshold.</p>}
+        </div>
+      </section>
 
       <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
         <div className="mb-4 flex items-start gap-3"><BellRing className="mt-1 text-primary-600" size={21} /><div><h2 className="text-lg font-bold text-gray-900 dark:text-white">Alert settings</h2><p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Create threshold rules. Rules are saved in SQL Server, evaluate matching incoming telemetry, create an alert when breached, and auto-resolve when readings return to normal.</p></div></div>
