@@ -115,6 +115,12 @@ public sealed class RealtimeCommandService
         }
     }
 
+    public void ResolveAlert(string sensorMac, string errorCode)
+    {
+        lock (_gate)
+            _activeAlerts.Remove($"{sensorMac}:{errorCode}");
+    }
+
     public bool TryGetDevice(string sensorMac, out DeviceSnapshot? device)
     {
         lock (_gate) return _devices.TryGetValue(sensorMac, out device);
@@ -132,7 +138,7 @@ public sealed class RealtimeCommandService
         }
     }
 
-    public IReadOnlyList<SuggestedAction> BuildSuggestions(IEnumerable<Sensor> sensors, IEnumerable<TelemetryDatum> recentTelemetry)
+    public IReadOnlyList<SuggestedAction> BuildSuggestions(IEnumerable<Sensor> sensors, IEnumerable<TelemetryDatum> recentTelemetry, IEnumerable<OperatorActivity>? operatorActivities = null)
     {
         var suggestions = new List<SuggestedAction>();
         var sensorLookup = sensors.ToDictionary(s => s.Macaddress, StringComparer.OrdinalIgnoreCase);
@@ -179,6 +185,43 @@ public sealed class RealtimeCommandService
                     "Review this device's recent telemetry and alerts; consider pinning it for faster access.",
                     DateTime.UtcNow));
             }
+        }
+
+        // Correlate repeated searches with later manual commands for the same device.
+        // Only surface a pattern after two observed sequences, rather than guessing from one action.
+        var activities = (operatorActivities ?? Array.Empty<OperatorActivity>())
+            .Where(a => a.CreatedAt >= DateTime.UtcNow.AddDays(-30))
+            .OrderBy(a => a.CreatedAt)
+            .ToList();
+        var commandEvents = activities.Where(a => a.ActivityType.Equals("command", StringComparison.OrdinalIgnoreCase)).ToList();
+        var correlatedPatterns = new Dictionary<string, (string SensorMac, string Command, string Search, int Count, DateTime LastSeen)>(StringComparer.OrdinalIgnoreCase);
+        foreach (var commandEvent in commandEvents)
+        {
+            if (string.IsNullOrWhiteSpace(commandEvent.SensorMac)) continue;
+            var matchingSearches = activities.Where(a =>
+                a.ActivityType.Equals("search", StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(a.SensorMac, commandEvent.SensorMac, StringComparison.OrdinalIgnoreCase) &&
+                a.CreatedAt <= commandEvent.CreatedAt &&
+                a.CreatedAt >= commandEvent.CreatedAt.AddMinutes(-30)).ToList();
+            foreach (var searchEvent in matchingSearches)
+            {
+                var key = $"{commandEvent.SensorMac}|{commandEvent.NormalizedDetail}";
+                if (correlatedPatterns.TryGetValue(key, out var current))
+                    correlatedPatterns[key] = (current.SensorMac, current.Command, searchEvent.Detail, current.Count + 1, commandEvent.CreatedAt > current.LastSeen ? commandEvent.CreatedAt : current.LastSeen);
+                else
+                    correlatedPatterns[key] = (commandEvent.SensorMac, commandEvent.Detail, searchEvent.Detail, 1, commandEvent.CreatedAt);
+            }
+        }
+
+        foreach (var pattern in correlatedPatterns.Values.Where(p => p.Count >= 2))
+        {
+            var sensor = sensorLookup.GetValueOrDefault(pattern.SensorMac);
+            var label = sensor?.NodeId ?? pattern.SensorMac;
+            var confidence = Math.Min(95, 50 + (pattern.Count - 2) * 10);
+            suggestions.Add(new SuggestedAction(pattern.SensorMac, label, "info",
+                $"Recurring operator pattern detected: searching “{pattern.Search}” is repeatedly followed by {pattern.Command} ({pattern.Count} observed sequences, {confidence}% confidence).",
+                "Review whether this search-to-command workflow should become an explicit automation rule. This is a historical correlation, not an automatic command.",
+                pattern.LastSeen));
         }
 
         return suggestions
