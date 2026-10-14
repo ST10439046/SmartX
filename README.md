@@ -589,6 +589,12 @@ dotnet test tests/SmartIotApi.Tests/SmartIotApi.Tests.csproj --configuration Rel
 
 The .NET unit tests cover critical-packet priority, repeated search-to-command pattern detection, avoiding pattern claims from a single sequence, and concurrent queue access.
 
+## Automatically test telemetry alerts
+
+The local Docker stack explicitly enables the telemetry simulator. Every 10 seconds it sends readings through the same command-stream telemetry endpoint used by the app, so configured alert rules are evaluated and alerts are created or recovered automatically. Demo readings cross thresholds for two cycles (about 20 seconds), then return to normal for two cycles so recovery can also be tested. Environmental sensors simulate 42°C against the 40°C rule, power sensors simulate 1200 W against the 1000 W rule, and actuator sensors simulate an invalid state of 2. The simulator is disabled in production by default unless `SMARTX_ENABLE_TELEMETRY_SIMULATION=true` is explicitly set.
+
+Open **Command Stream & History** at `http://localhost:8088` and leave it open. It refreshes every 10 seconds. Watch the active alerts list: a simulated threshold alert should appear automatically, remain visible during the breach window, and resolve when the sensor returns to normal. The **Test alert** button remains available for an immediate manual check.
+
 ## Manually test predictive operator patterns
 
 Run the Docker stack and open `http://localhost:8088`. Navigate to **Command Stream & History** (the live operations page). The prediction is an explainable rule-based correlation, not an AI model, and it never executes commands automatically.
