@@ -2,3 +2,37 @@
 /bin
 /obj
 /node_modules
+/tests/bin
+/tests/obj
+
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Build output
+dist/
+build/
+**/bin/
+**/obj/
+
+# Environment variables and secrets
+.env
+.env.*
+!.env.example
+
+# IDE and editor files
+.vs/
+.vscode/
+.idea/
+
+# Logs
+*.log
+
+# Local database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Python virtual environments
+.venv/
+venv/
