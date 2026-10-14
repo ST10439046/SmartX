@@ -25,7 +25,7 @@ The platform is designed around a smart-building and smart-facility environment 
 * [Backend API](#backend-api)
 * [Sensor Management](#sensor-management)
 * [Telemetry](#telemetry)
-* [Alerts](#alerts)
+* [Alerts](#alerts)\n* [Command Stream, Predictive Insights, and Alert Acknowledgement](#command-stream-predictive-insights-and-alert-acknowledgement)\n* [Testing](#testing)
 * [File Attachments](#file-attachments)
 * [Notifications](#notifications)
 * [Application Navigation](#application-navigation)
@@ -45,7 +45,7 @@ The platform is designed around a smart-building and smart-facility environment 
 
 Smart-X provides a central interface for monitoring and managing IoT sensors.
 
-The active part of the platform focuses on **Sensor Data Ingestion and Telemetry**. Users can register sensors, view their current status, monitor telemetry readings, review alerts, and attach files to sensors.
+The platform implements sensor ingestion and telemetry plus a live command-stream dashboard. Operators can monitor readings, configure SQL-backed threshold rules, issue simulated actuator commands, inspect command history, acknowledge active alerts, and review explainable operator-pattern insights. The command actions remain simulated until a real device transport is integrated.
 
 The application has been structured so that additional IoT functionality can be introduced without requiring a complete redesign of the existing system.
 
@@ -135,17 +135,18 @@ The primary implemented architectural pillar provides:
 
 ## 2. Real-Time Command Stream and History
 
-This architectural pillar has been reserved for future implementation.
+Implemented functionality includes:
 
-Planned functionality includes:
+* Priority processing of critical packets before routine packets
+* Persisted simulated device output state and command history
+* Undo for commands issued during the current API session
+* Configurable SQL-backed telemetry threshold rules
+* Automatic recovery of threshold alerts when readings return to range
+* Manual acknowledgement metadata for active alerts
+* Persisted search and command activity for explainable pattern detection
+* Bounded, single-flight dashboard polling to avoid overlapping requests
 
-* Sending commands to sensors
-* Command execution tracking
-* Command history
-* Command scheduling
-* Command status monitoring
-
-The application currently provides a dedicated navigation area for this functionality.
+The live operations page is available in the application navigation.
 
 ## 3. Network Topology and Mesh Routing
 
@@ -506,6 +507,101 @@ Critical
 ```
 
 Alerts are retrieved through the backend API and displayed using contextual styling.
+
+---
+
+# Command Stream, Predictive Insights, and Alert Acknowledgement
+
+The Command Stream page refreshes dashboard data every five seconds. Refresh calls are coalesced while a previous request is still running, and failed requests are reported in the UI instead of blocking the page. Search activity logging is debounced so every keystroke is not treated as a separate operator action.
+
+## Explainable operator-pattern detection
+
+Searches and manual commands are stored in SQL Server in the `OperatorActivities` table. The engine checks the previous 30 days and looks for repeated sequences where an operator searches for a device and then issues a command to that same device within 30 minutes. It requires at least two observed sequences before reporting a recurring pattern. Suggestions include the observed count and a confidence indicator; they are historical correlations, not guaranteed predictions, and they never issue a command automatically.
+
+Activity history is bounded by retention cleanup: entries older than 90 days are removed and the table is capped at 5,000 recent records. This keeps the pattern engine explainable and limits database growth. Search events that cannot be associated with a registered sensor are still recorded but are not linked to device-specific command patterns.
+
+## Alert lifecycle
+
+* **Raised:** an enabled alert rule or built-in safety threshold is breached.
+* **Acknowledged:** an operator clicks **Acknowledge**. The API records the acknowledgement timestamp and operator label. Acknowledgement means the alert has been seen, not that the condition has been fixed.
+* **Resolved:** rule-based alerts resolve automatically when a later reading returns inside the configured range. Built-in threshold alerts are also resolved when the reading recovers. Resolved alerts no longer appear in the active-alert list.
+* **Deduplication:** a continuing breach does not create a new active copy of the same rule alert for every reading.
+
+The acknowledgement endpoint is:
+
+```http
+POST /api/commandstream/alerts/{id}/acknowledge
+Content-Type: application/json
+
+{
+  "acknowledgedBy": "Operator"
+}
+```
+
+An alert cannot be acknowledged after it has been resolved. Repeating an acknowledgement request is safe and returns the existing acknowledgement.
+
+## Useful command-stream endpoints
+
+| Method | Endpoint | Purpose |
+| --- | --- | --- |
+| GET | `/api/commandstream/dashboard` | Dashboard, active alerts, sensors, recent commands, and queue metrics |
+| POST | `/api/commandstream/telemetry` | Submit a telemetry packet for rule evaluation |
+| POST | `/api/commandstream/commands` | Apply a simulated device command |
+| POST | `/api/commandstream/search` | Record a search for operator-pattern history |
+| GET | `/api/commandstream/insights` | Return threshold and recurring-activity suggestions |
+| POST | `/api/commandstream/alerts/{id}/acknowledge` | Record manual acknowledgement |
+| GET | `/api/commandstream/metrics` | Read in-memory queue and processing metrics |
+
+Example telemetry request:
+
+```json
+{
+  "sensorMac": "00:1A:2B:3C:4D:5E",
+  "dataType": "temperature",
+  "dataValue": 42
+}
+```
+
+Example manual command request:
+
+```json
+{
+  "sensorMac": "00:1A:2B:3C:4D:5F",
+  "commandType": "START"
+}
+```
+
+Command execution currently updates a simulated state in SQL Server. It does not control physical sensors or actuators. The in-memory undo stack and packet timeline reset when the API restarts, while database-backed telemetry, alert state, commands, device state, and operator activity remain persisted.
+
+---
+
+# Testing
+
+Run these commands from the repository root.
+
+## Backend build and unit tests
+
+```bash
+dotnet restore backend/SmartIotApi.csproj
+dotnet build backend/SmartIotApi.csproj --configuration Release
+dotnet test tests/SmartIotApi.Tests/SmartIotApi.Tests.csproj --configuration Release
+```
+
+The .NET unit tests cover critical-packet priority, repeated search-to-command pattern detection, avoiding pattern claims from a single sequence, and concurrent queue access.
+
+## Frontend async behavior, lint, and production build
+
+```bash
+cd frontend
+npm install
+npm test
+npm run lint
+npm run build
+```
+
+The dependency-free Node test suite checks that overlapping dashboard refreshes are coalesced, a failed request releases the guard for retry, and a pending request does not block other event-loop work.
+
+GitHub Actions runs backend build/tests, frontend tests/lint/build, and Docker Compose validation/builds. Treat a green CI run as the verification gate before merging or deploying.
 
 ---
 
