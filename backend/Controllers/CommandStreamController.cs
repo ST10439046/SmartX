@@ -81,6 +81,7 @@ public sealed class CommandStreamController : ControllerBase
             else if (!breached && activeAlert is not null)
             {
                 activeAlert.IsResolved = true;
+                _stream.ResolveAlert(mac, code);
             }
         }
 
