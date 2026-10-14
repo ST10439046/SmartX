@@ -58,7 +58,6 @@ public sealed class CommandStreamController : ControllerBase
         _stream.Enqueue(new(mac, type, request.DataValue, timestamp, critical, request.ErrorCode));
         var processed = _stream.Drain();
         _db.TelemetryData.Add(new TelemetryDatum { SensorMac = mac, DataType = type, DataValue = request.DataValue, Timestamp = timestamp });
-        _db.OperatorActivities.Add(new OperatorActivity { ActivityType = "telemetry", SensorMac = mac, Detail = $"{type}={request.DataValue:0.###}", NormalizedDetail = type.ToLowerInvariant(), CreatedAt = timestamp });
 
         // Resolve rule alerts automatically when a new reading returns inside the configured range.
         foreach (var rule in matchedRules)
@@ -96,7 +95,7 @@ public sealed class CommandStreamController : ControllerBase
         else
         {
             var recoveredAlerts = await _db.ActiveAlerts.Where(a => a.SensorMac == mac &&
-                (a.ErrorCode == "AUTO-THRESHOLD" || (a.ErrorCode != null && !a.ErrorCode.StartsWith("RULE-"))) && a.IsResolved != true).ToListAsync(ct);
+                a.Description != null && a.Description.StartsWith("Critical stream reading:") && a.IsResolved != true).ToListAsync(ct);
             foreach (var recovered in recoveredAlerts)
             {
                 recovered.IsResolved = true;
@@ -158,6 +157,7 @@ public sealed class CommandStreamController : ControllerBase
         });
         _db.OperatorActivities.Add(new OperatorActivity { ActivityType = "command", SensorMac = mac, Detail = command, NormalizedDetail = command.ToLowerInvariant(), CreatedAt = DateTime.UtcNow });
         await _db.SaveChangesAsync(ct);
+        await PruneOperatorActivityAsync(ct);
         _stream.RegisterDevices(new[] { sensor });
         _stream.RecordCommand(mac, command, previousState);
 
