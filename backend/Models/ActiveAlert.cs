@@ -19,6 +19,10 @@ public partial class ActiveAlert
 
     public DateTime? CreatedAt { get; set; }
 
+    public DateTime? AcknowledgedAt { get; set; }
+
+    public string? AcknowledgedBy { get; set; }
+
     /// <summary>
     /// Navigation property to the sensor that generated this alert.
     /// Set to JsonIgnore to prevent circular reference serialization issues.
