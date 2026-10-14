@@ -42,6 +42,8 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Production
       ASPNETCORE_URLS: http://+:8080
+      SMARTX_ENABLE_TELEMETRY_SIMULATION: "true"
+      SMARTX_SIMULATOR_BASE_URL: http://127.0.0.1:8080
       ConnectionStrings__DefaultConnection: "Server=sqlserver,1433;Database=SmartIot;User Id=sa;Password=${MSSQL_SA_PASSWORD:?Set MSSQL_SA_PASSWORD in .env};Encrypt=False;TrustServerCertificate=True;Connect Timeout=30"
     ports:
       - "${API_PORT:-5231}:8080"

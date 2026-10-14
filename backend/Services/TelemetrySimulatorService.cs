@@ -46,6 +46,7 @@ public class TelemetrySimulatorService : IHostedService
     private readonly Random _random = new();
     private bool _isRunning = false;
     private readonly Stopwatch _sessionStopwatch = new();
+    private long _simulationCycle;
 
     /// <summary>
     /// Constructor for TelemetrySimulatorService.
@@ -63,7 +64,7 @@ public class TelemetrySimulatorService : IHostedService
         _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _environment = environment ?? throw new ArgumentNullException(nameof(environment));
-        _baseApiUrl = baseApiUrl;
+        _baseApiUrl = Environment.GetEnvironmentVariable("SMARTX_SIMULATOR_BASE_URL") ?? baseApiUrl;
 
         _logger.LogInformation("TelemetrySimulatorService initialized with base URL: {BaseUrl}", _baseApiUrl);
     }
@@ -76,10 +77,14 @@ public class TelemetrySimulatorService : IHostedService
     /// <returns>Completed task</returns>
     public Task StartAsync(CancellationToken cancellationToken)
     {
-        // Only run in Development environment
-        if (!_environment.IsDevelopment())
+        // Keep production simulations opt-in, while allowing the local Docker demo to enable them explicitly.
+        var explicitlyEnabled = string.Equals(
+            Environment.GetEnvironmentVariable("SMARTX_ENABLE_TELEMETRY_SIMULATION"),
+            "true",
+            StringComparison.OrdinalIgnoreCase);
+        if (!_environment.IsDevelopment() && !explicitlyEnabled)
         {
-            _logger.LogWarning("Telemetry simulator is configured to run in Development environment only. Current environment: {Environment}", _environment.EnvironmentName);
+            _logger.LogInformation("Telemetry simulation is disabled in {Environment}. Set SMARTX_ENABLE_TELEMETRY_SIMULATION=true to enable demo data.", _environment.EnvironmentName);
             return Task.CompletedTask;
         }
 
@@ -163,12 +168,16 @@ public class TelemetrySimulatorService : IHostedService
 
                 _logger.LogDebug("Generating telemetry for {SensorCount} active sensors.", activeSensors.Count);
 
-                // Generate and send telemetry for each sensor
+                // Keep each breach visible for two cycles, then send normal readings for two cycles.
+                // This predictable pattern makes rule alerts reproducible instead of relying on random spikes.
+                var cycle = Interlocked.Increment(ref _simulationCycle);
+                var simulateBreach = ((cycle - 1) / 2) % 2 == 0;
+
                 foreach (var sensor in activeSensors)
                 {
                     try
                     {
-                        var telemetry = GenerateTelemetryForSensor(sensor);
+                        var telemetry = GenerateTelemetryForSensor(sensor, simulateBreach);
                         await SendTelemetryAsync(telemetry);
                     }
                     catch (Exception ex)
@@ -192,35 +201,35 @@ public class TelemetrySimulatorService : IHostedService
     /// - Actuator: State (0 or 1), Angle (0-360°)
     /// - Other: Generic numeric reading
     /// </summary>
-    private TelemetryDatum GenerateTelemetryForSensor(Sensor sensor)
+    private TelemetryDatum GenerateTelemetryForSensor(Sensor sensor, bool simulateBreach)
     {
         var now = DateTime.UtcNow;
         var category = sensor.Category?.ToLowerInvariant() ?? "unknown";
 
         return category switch
         {
-            "environmental" => GenerateEnvironmentalData(sensor.Macaddress, now),
-            "power" => GeneratePowerData(sensor.Macaddress, now),
-            "actuator" => GenerateActuatorData(sensor.Macaddress, now),
+            "environmental" => GenerateEnvironmentalData(sensor.Macaddress, now, simulateBreach),
+            "power" => GeneratePowerData(sensor.Macaddress, now, simulateBreach),
+            "actuator" => GenerateActuatorData(sensor.Macaddress, now, simulateBreach),
             "temperature" => new TelemetryDatum
             {
                 SensorMac = sensor.Macaddress,
                 DataType = "temperature",
-                DataValue = 15 + _random.NextDouble() * 25,  // 15-40°C
+                DataValue = simulateBreach ? 42 : 20 + _random.NextDouble() * 10,  // Normal: 20-30°C; demo breach: 42°C
                 Timestamp = now
             },
             "humidity" => new TelemetryDatum
             {
                 SensorMac = sensor.Macaddress,
                 DataType = "humidity",
-                DataValue = 20 + _random.NextDouble() * 70,  // 20-90%
+                DataValue = simulateBreach ? 95 : 30 + _random.NextDouble() * 45,  // Normal: 30-75%; demo breach: 95%
                 Timestamp = now
             },
             _ => new TelemetryDatum
             {
                 SensorMac = sensor.Macaddress,
-                DataType = "genericReading",
-                DataValue = _random.NextDouble() * 100,  // 0-100
+                DataType = "reading",
+                DataValue = simulateBreach ? 110 : 30 + _random.NextDouble() * 30,  // Matches the default reading rule
                 Timestamp = now
             }
         };
@@ -230,13 +239,13 @@ public class TelemetrySimulatorService : IHostedService
     /// Generates realistic environmental sensor data (temperature).
     /// Includes some temporal variation to simulate real-world patterns.
     /// </summary>
-    private TelemetryDatum GenerateEnvironmentalData(string sensorMac, DateTime timestamp)
+    private TelemetryDatum GenerateEnvironmentalData(string sensorMac, DateTime timestamp, bool simulateBreach)
     {
         // Base temperature around 22°C with some variation
         var baseTemp = 22.0;
         var variation = (_random.NextDouble() - 0.5) * 8;  // ±4°C variation
         var sinusoidalVariation = Math.Sin(DateTime.UtcNow.Ticks / 300_000_000.0) * 3;  // Slow drift ±3°C
-        var value = baseTemp + variation + sinusoidalVariation;
+        var value = simulateBreach ? 42.0 : baseTemp + variation + sinusoidalVariation;
 
         return new TelemetryDatum
         {
@@ -251,14 +260,14 @@ public class TelemetrySimulatorService : IHostedService
     /// Generates realistic power sensor data (wattage).
     /// Simulates typical power consumption patterns.
     /// </summary>
-    private TelemetryDatum GeneratePowerData(string sensorMac, DateTime timestamp)
+    private TelemetryDatum GeneratePowerData(string sensorMac, DateTime timestamp, bool simulateBreach)
     {
         // Base power load around 300W with some random variation
         var basePower = 300.0;
         var randomVariation = (_random.NextDouble() - 0.5) * 150;  // ±75W variation
         var spikeProbability = _random.NextDouble();
         var spike = spikeProbability < 0.1 ? _random.NextDouble() * 200 : 0;  // 10% chance of spike up to 200W
-        var value = basePower + randomVariation + spike;
+        var value = simulateBreach ? 1200.0 : basePower + randomVariation + spike;
 
         return new TelemetryDatum
         {
@@ -273,10 +282,10 @@ public class TelemetrySimulatorService : IHostedService
     /// Generates realistic actuator sensor data (state: 0 or 1).
     /// Simulates on/off states with occasional transitions.
     /// </summary>
-    private TelemetryDatum GenerateActuatorData(string sensorMac, DateTime timestamp)
+    private TelemetryDatum GenerateActuatorData(string sensorMac, DateTime timestamp, bool simulateBreach)
     {
         // 70% chance of being on, 30% chance of being off
-        var state = _random.NextDouble() < 0.7 ? 1 : 0;
+        var state = simulateBreach ? 2 : (_random.NextDouble() < 0.7 ? 1 : 0);
 
         return new TelemetryDatum
         {
@@ -301,7 +310,7 @@ public class TelemetrySimulatorService : IHostedService
             var json = JsonSerializer.Serialize(telemetry);
             var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-            var response = await _httpClient.PostAsync("/api/telemetrydata", content);
+            var response = await _httpClient.PostAsync("/api/commandstream/telemetry", content);
 
             if (response.IsSuccessStatusCode)
             {
