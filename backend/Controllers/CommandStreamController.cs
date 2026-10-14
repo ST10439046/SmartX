@@ -58,6 +58,7 @@ public sealed class CommandStreamController : ControllerBase
         _stream.Enqueue(new(mac, type, request.DataValue, timestamp, critical, request.ErrorCode));
         var processed = _stream.Drain();
         _db.TelemetryData.Add(new TelemetryDatum { SensorMac = mac, DataType = type, DataValue = request.DataValue, Timestamp = timestamp });
+        _db.OperatorActivities.Add(new OperatorActivity { ActivityType = "telemetry", SensorMac = mac, Detail = $"{type}={request.DataValue:0.###}", NormalizedDetail = type.ToLowerInvariant(), CreatedAt = timestamp });
 
         // Resolve rule alerts automatically when a new reading returns inside the configured range.
         foreach (var rule in matchedRules)
@@ -83,12 +84,24 @@ public sealed class CommandStreamController : ControllerBase
             }
         }
 
-        // Keep the existing built-in safety heuristics for installations without a matching custom rule.
-        if (request.IsCritical || IsCritical(type, request.DataValue))
+        // Keep built-in safety alerts for installations without a matching custom rule.
+        var builtInCritical = request.IsCritical || IsCritical(type, request.DataValue);
+        if (builtInCritical)
         {
             var code = string.IsNullOrWhiteSpace(request.ErrorCode) ? "AUTO-THRESHOLD" : request.ErrorCode.Trim();
             if (!await _db.ActiveAlerts.AnyAsync(a => a.SensorMac == mac && a.ErrorCode == code && a.IsResolved != true, ct))
                 _db.ActiveAlerts.Add(new ActiveAlert { SensorMac = mac, ErrorCode = code, Description = $"Critical stream reading: {type} = {request.DataValue}", IsResolved = false, CreatedAt = DateTime.UtcNow });
+        }
+        else
+        {
+            var recoveredAlerts = await _db.ActiveAlerts.Where(a => a.SensorMac == mac &&
+                (a.ErrorCode == "AUTO-THRESHOLD" || a.ErrorCode == request.ErrorCode) && a.IsResolved != true).ToListAsync(ct);
+            foreach (var recovered in recoveredAlerts)
+            {
+                recovered.IsResolved = true;
+                if (!string.IsNullOrWhiteSpace(recovered.ErrorCode))
+                    _stream.ResolveAlert(mac, recovered.ErrorCode);
+            }
         }
 
         await _db.SaveChangesAsync(ct);
@@ -142,6 +155,7 @@ public sealed class CommandStreamController : ControllerBase
             Status = "Applied (simulated)",
             CreatedAt = DateTime.UtcNow
         });
+        _db.OperatorActivities.Add(new OperatorActivity { ActivityType = "command", SensorMac = mac, Detail = command, NormalizedDetail = command.ToLowerInvariant(), CreatedAt = DateTime.UtcNow });
         await _db.SaveChangesAsync(ct);
         _stream.RegisterDevices(new[] { sensor });
         _stream.RecordCommand(mac, command, previousState);
@@ -263,15 +277,61 @@ public sealed class CommandStreamController : ControllerBase
     {
         var sensors = await _db.Sensors.AsNoTracking().ToListAsync(ct);
         var telemetry = await _db.TelemetryData.AsNoTracking().OrderByDescending(x => x.Timestamp).Take(300).ToListAsync(ct);
-        return Ok(_stream.BuildSuggestions(sensors, telemetry));
+        var activities = await _db.OperatorActivities.AsNoTracking().Where(a => a.CreatedAt >= DateTime.UtcNow.AddDays(-30))
+            .OrderByDescending(a => a.CreatedAt).Take(2000).ToListAsync(ct);
+        return Ok(_stream.BuildSuggestions(sensors, telemetry, activities));
     }
 
     [HttpPost("search")]
-    public IActionResult Search(SearchRequest request)
+    public async Task<IActionResult> Search(SearchRequest request, CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(request.Query)) return BadRequest(new { message = "Query is required." });
-        _stream.RecordQuery(request.Query);
-        return Ok(new { recorded = true });
+        var query = request.Query.Trim();
+        if (query.Length > 200) return BadRequest(new { message = "Query must be 200 characters or fewer." });
+
+        _stream.RecordQuery(query);
+        var normalized = query.ToLowerInvariant();
+        var matchingSensor = await _db.Sensors.AsNoTracking().FirstOrDefaultAsync(s =>
+            s.Macaddress.ToLower() == normalized ||
+            (s.NodeId != null && s.NodeId.ToLower().Contains(normalized)) ||
+            (s.Room != null && s.Room.ToLower().Contains(normalized)) ||
+            (s.Zone != null && s.Zone.ToLower().Contains(normalized)) ||
+            (s.Category != null && s.Category.ToLower().Contains(normalized)), ct);
+        _db.OperatorActivities.Add(new OperatorActivity
+        {
+            ActivityType = "search",
+            SensorMac = matchingSensor?.Macaddress,
+            Detail = query,
+            NormalizedDetail = matchingSensor?.Macaddress.ToLowerInvariant() ?? normalized,
+            CreatedAt = DateTime.UtcNow
+        });
+        await _db.SaveChangesAsync(ct);
+        await PruneOperatorActivityAsync(ct);
+        return Ok(new { recorded = true, associatedSensorMac = matchingSensor?.Macaddress });
+    }
+
+    [HttpPost("alerts/{id:int}/acknowledge")]
+    public async Task<IActionResult> AcknowledgeAlert(int id, AcknowledgeAlertRequest request, CancellationToken ct)
+    {
+        var alert = await _db.ActiveAlerts.FirstOrDefaultAsync(a => a.AlertId == id, ct);
+        if (alert is null) return NotFound(new { message = "Alert was not found." });
+        if (alert.IsResolved == true) return Conflict(new { message = "Resolved alerts cannot be acknowledged as active alerts." });
+        if (alert.AcknowledgedAt is not null)
+            return Ok(new { success = true, alertId = id, acknowledgedAt = alert.AcknowledgedAt, acknowledgedBy = alert.AcknowledgedBy, message = "Alert was already acknowledged." });
+
+        alert.AcknowledgedAt = DateTime.UtcNow;
+        alert.AcknowledgedBy = string.IsNullOrWhiteSpace(request.AcknowledgedBy) ? "Operator" : request.AcknowledgedBy.Trim()[..Math.Min(120, request.AcknowledgedBy.Trim().Length)];
+        await _db.SaveChangesAsync(ct);
+        return Ok(new { success = true, alertId = id, acknowledgedAt = alert.AcknowledgedAt, acknowledgedBy = alert.AcknowledgedBy, message = "Alert acknowledged. It remains active until the sensor returns to normal." });
+    }
+
+    private async Task PruneOperatorActivityAsync(CancellationToken ct)
+    {
+        await _db.OperatorActivities.Where(a => a.CreatedAt < DateTime.UtcNow.AddDays(-90)).ExecuteDeleteAsync(ct);
+        var excessIds = await _db.OperatorActivities.AsNoTracking().OrderByDescending(a => a.CreatedAt)
+            .Skip(5000).Select(a => a.OperatorActivityId).ToListAsync(ct);
+        if (excessIds.Count > 0)
+            await _db.OperatorActivities.Where(a => excessIds.Contains(a.OperatorActivityId)).ExecuteDeleteAsync(ct);
     }
 
     [HttpGet("metrics")]
@@ -373,4 +433,5 @@ public sealed class CommandStreamController : ControllerBase
 public sealed record StreamPacketRequest(string SensorMac, string DataType, double DataValue, DateTime? Timestamp = null, bool IsCritical = false, string? ErrorCode = null);
 public sealed record OverrideCommandRequest(string SensorMac, string CommandType);
 public sealed record SearchRequest(string Query);
+public sealed record AcknowledgeAlertRequest(string? AcknowledgedBy = null);
 public sealed record AlertRuleRequest(string Name, string? SensorMac, string DataType, string Comparison, double Threshold, string Severity = "warning", bool IsEnabled = true);
