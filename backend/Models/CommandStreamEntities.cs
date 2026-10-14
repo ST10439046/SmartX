@@ -56,8 +56,8 @@ public partial class SmartIotContext
             entity.HasKey(e => e.OperatorActivityId);
             entity.Property(e => e.ActivityType).HasMaxLength(20).IsUnicode(false).IsRequired();
             entity.Property(e => e.SensorMac).HasMaxLength(17).IsUnicode(false).HasColumnName("SensorMAC");
-            entity.Property(e => e.Detail).HasMaxLength(500).IsUnicode(false).IsRequired();
-            entity.Property(e => e.NormalizedDetail).HasMaxLength(500).IsUnicode(false).IsRequired();
+            entity.Property(e => e.Detail).HasMaxLength(500).IsRequired();
+            entity.Property(e => e.NormalizedDetail).HasMaxLength(500).IsRequired();
             entity.Property(e => e.CreatedAt).HasColumnType("datetime2").HasDefaultValueSql("SYSUTCDATETIME()");
             entity.HasIndex(e => new { e.SensorMac, e.ActivityType, e.CreatedAt });
         });
