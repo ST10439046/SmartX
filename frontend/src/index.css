@@ -21,6 +21,19 @@ body {
   }
 }
 
+/* Keep native select menus readable and consistent with Smart-X's dark surfaces. */
+select {
+  color-scheme: dark;
+  background-color: #111827;
+  color: #f9fafb;
+}
+
+select option,
+select optgroup {
+  background-color: #111827;
+  color: #f9fafb;
+}
+
 /* Custom animations */
 @keyframes slideIn {
   from {
