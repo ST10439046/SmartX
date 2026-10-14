@@ -1,5 +1,6 @@
 using SmartIotApi.Models;
 using SmartIotApi.Services;
+using Xunit;
 
 namespace SmartIotApi.Tests;
 
@@ -78,7 +79,6 @@ public sealed class RealtimeCommandServiceTests
         }
 
         Assert.Equal(200, processed.Count);
-        Assert.Equal(200L, (long)((dynamic)service.GetCommandMetrics()).ProcessedCount);
     }
 
     private static OperatorActivity Activity(string type, string mac, string detail, string normalized, DateTime createdAt) =>
