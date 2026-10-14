@@ -589,6 +589,19 @@ dotnet test tests/SmartIotApi.Tests/SmartIotApi.Tests.csproj --configuration Rel
 
 The .NET unit tests cover critical-packet priority, repeated search-to-command pattern detection, avoiding pattern claims from a single sequence, and concurrent queue access.
 
+## Manually test predictive operator patterns
+
+Run the Docker stack and open `http://localhost:8088`. Navigate to **Command Stream & History** (the live operations page). The prediction is an explainable rule-based correlation, not an AI model, and it never executes commands automatically.
+
+1. In **Device registry**, search for a known sensor using its node ID or MAC address. A search of at least two characters is logged after a short debounce. The query must match a sensor identifier or attribute so the search can be associated with that sensor.
+2. For that same sensor, click a simulated command such as **ON** or **OFF**. Search and command must occur within 30 minutes of one another.
+3. Repeat the same search and then issue the same command to that same sensor a second time.
+4. Wait for the next dashboard refresh (up to five seconds) and inspect **Automated insights**. Look for **Recurring operator pattern detected**, including the observed sequence count and confidence.
+5. As a negative check, perform only one search-command sequence for another sensor/command. It should not qualify as a recurring pattern by itself.
+6. For a separate threshold check, click **Test alert**. This sends a demo low-moisture packet to a sensor and should produce an active alert/threshold insight. Acknowledge the alert and confirm acknowledgement does not itself resolve it.
+
+The search-to-command sequence must be repeated for the same sensor and command, with the search preceding the command. The pattern history is persisted in SQL Server and evaluated from recent operator activity. Use test/demo sensors because all device commands in this project are simulated.
+
 ## Frontend async behavior, lint, and production build
 
 ```bash
