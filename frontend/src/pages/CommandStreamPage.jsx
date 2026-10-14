@@ -259,16 +259,6 @@ function CommandStreamPage() {
         <div className="space-y-5">
           <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
             <div className="flex items-center justify-between gap-3"><div><h2 className="text-lg font-bold text-gray-900 dark:text-white">Automated insights</h2><p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Threshold and operator-pattern suggestions.</p></div><Bot size={21} className="text-primary-600" /></div>
-            <div className="mt-3 rounded-xl border border-primary-200 bg-primary-50 p-3 text-sm text-primary-950 dark:border-primary-900 dark:bg-primary-950/40 dark:text-primary-100">
-              <p className="font-semibold">How to test predictive patterns</p>
-              <ol className="mt-2 list-decimal space-y-1 pl-5">
-                <li>In Device registry, search for a sensor using its node ID, MAC address, room, zone, or category.</li>
-                <li>Within 30 minutes, issue a simulated command such as ON or OFF for that same sensor.</li>
-                <li>Repeat the same search, then issue the same command for that sensor a second time.</li>
-                <li>Wait for the dashboard refresh. Look here for a “Recurring operator pattern detected” suggestion with sequence count and confidence.</li>
-              </ol>
-              <p className="mt-2 text-xs">One search-command sequence is not enough. Search history must match a sensor, and commands are simulated only. If no suggestion appears, confirm the search is logged and that the same sensor and command were used twice.</p>
-            </div>
             <div className="mt-4 space-y-3">{insights.map((insight, index) => <div key={`${insight.sensorMac}-${insight.message}-${index}`} className="rounded-xl border border-gray-200 p-3 dark:border-gray-800"><div className="flex items-start gap-2">{insight.severity === 'critical' ? <AlertCircle size={17} className="mt-0.5 text-rose-500" /> : <AlertTriangle size={17} className="mt-0.5 text-amber-500" />}<div><p className="text-sm font-semibold text-gray-900 dark:text-white">{insight.deviceName}</p><p className="mt-1 text-sm text-gray-600 dark:text-gray-300">{insight.message}</p><p className="mt-2 text-xs text-primary-700 dark:text-primary-300">{insight.recommendation}</p></div></div></div>)}{insights.length === 0 && <p className="rounded-xl bg-gray-50 p-4 text-sm text-gray-500 dark:bg-gray-800/60">No out-of-range readings detected.</p>}</div>
           </section>
           <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
