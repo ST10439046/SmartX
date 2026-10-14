@@ -28,7 +28,7 @@ public sealed class CommandStreamController : ControllerBase
         var telemetry = await _db.TelemetryData.AsNoTracking().OrderByDescending(x => x.Timestamp).Take(200).ToListAsync(ct);
         var alerts = await _db.ActiveAlerts.AsNoTracking().Where(x => x.IsResolved != true)
             .OrderByDescending(x => x.CreatedAt).Take(100)
-            .Select(x => new { x.AlertId, x.SensorMac, x.ErrorCode, x.Description, x.CreatedAt }).ToListAsync(ct);
+            .Select(x => new { x.AlertId, x.SensorMac, x.ErrorCode, x.Description, x.CreatedAt, x.AcknowledgedAt, x.AcknowledgedBy }).ToListAsync(ct);
         var commands = await _db.CommandHistories.AsNoTracking().OrderByDescending(x => x.CreatedAt).Take(50)
             .Select(x => new { x.CommandId, x.SensorMac, x.CommandType, x.Status, x.CreatedAt }).ToListAsync(ct);
         var deviceStates = await _db.CommandDeviceStates.AsNoTracking().ToListAsync(ct);
@@ -95,7 +95,7 @@ public sealed class CommandStreamController : ControllerBase
         else
         {
             var recoveredAlerts = await _db.ActiveAlerts.Where(a => a.SensorMac == mac &&
-                (a.ErrorCode == "AUTO-THRESHOLD" || a.ErrorCode == request.ErrorCode) && a.IsResolved != true).ToListAsync(ct);
+                (a.ErrorCode == "AUTO-THRESHOLD" || (a.ErrorCode != null && !a.ErrorCode.StartsWith("RULE-"))) && a.IsResolved != true).ToListAsync(ct);
             foreach (var recovered in recoveredAlerts)
             {
                 recovered.IsResolved = true;
