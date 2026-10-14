@@ -47,6 +47,8 @@ public partial class SmartIotContext : DbContext
                 .HasMaxLength(50)
                 .IsUnicode(false);
             entity.Property(e => e.IsResolved).HasDefaultValue(false);
+            entity.Property(e => e.AcknowledgedAt).HasColumnType("datetime2");
+            entity.Property(e => e.AcknowledgedBy).HasMaxLength(120);
             entity.Property(e => e.SensorMac)
                 .HasMaxLength(17)
                 .IsUnicode(false)
