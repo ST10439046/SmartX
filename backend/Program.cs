@@ -63,8 +63,8 @@ BEGIN
         OperatorActivityId bigint IDENTITY(1,1) NOT NULL CONSTRAINT PK_OperatorActivities PRIMARY KEY,
         ActivityType varchar(20) NOT NULL,
         SensorMAC varchar(17) NULL,
-        Detail varchar(500) NOT NULL,
-        NormalizedDetail varchar(500) NOT NULL,
+        Detail nvarchar(500) NOT NULL,
+        NormalizedDetail nvarchar(500) NOT NULL,
         CreatedAt datetime2 NOT NULL CONSTRAINT DF_OperatorActivities_CreatedAt DEFAULT SYSUTCDATETIME()
     );
     CREATE INDEX IX_OperatorActivities_SensorMAC_ActivityType_CreatedAt
