@@ -53,7 +53,7 @@ function CommandStreamPage() {
   useEffect(() => {
     mounted.current = true;
     const initialLoad = window.setTimeout(() => { void loadDashboard(); }, 0);
-    const timer = window.setInterval(loadDashboard, 5000);
+    const timer = window.setInterval(loadDashboard, 10000);
     return () => {
       mounted.current = false;
       window.clearTimeout(initialLoad);
