@@ -516,7 +516,7 @@ The Command Stream page refreshes dashboard data every five seconds. Refresh cal
 
 ## Explainable operator-pattern detection
 
-Searches and manual commands are stored in SQL Server in the `OperatorActivities` table. The engine checks the previous 30 days and looks for repeated sequences where an operator searches for a device and then issues a command to that same device within 30 minutes. It requires at least two observed sequences before reporting a recurring pattern. Suggestions include the observed count and a confidence indicator; they are historical correlations, not guaranteed predictions, and they never issue a command automatically.
+Searches and manual commands are stored in SQL Server in the `OperatorActivities` table. High-frequency sensor packets are not copied into this operator-history table. The engine checks the previous 30 days and looks for repeated sequences where an operator searches for a device and then issues a command to that same device within 30 minutes. It requires at least two observed sequences before reporting a recurring pattern. Suggestions include the observed count and a confidence indicator; they are historical correlations, not guaranteed predictions, and they never issue a command automatically.
 
 Activity history is bounded by retention cleanup: entries older than 90 days are removed and the table is capped at 5,000 recent records. This keeps the pattern engine explainable and limits database growth. Search events that cannot be associated with a registered sensor are still recorded but are not linked to device-specific command patterns.
 
