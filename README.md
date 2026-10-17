@@ -8,7 +8,8 @@ Smart-X is an IoT monitoring and management platform developed as part of the PR
 
 The platform is designed around a smart-building and smart-facility environment where connected sensors can be registered, monitored, and managed through a central web interface.
 
-**Demo Video Link:** https://youtu.be/7UVAFmF4p54
+**Demo Video Link:** [https://youtu.be/7UVAFmF4p54](https://youtu.be/aNDt0En_QMs)]
+
 ---
 
 ## Table of Contents
@@ -25,7 +26,9 @@ The platform is designed around a smart-building and smart-facility environment 
 * [Backend API](#backend-api)
 * [Sensor Management](#sensor-management)
 * [Telemetry](#telemetry)
-* [Alerts](#alerts)\n* [Command Stream, Predictive Insights, and Alert Acknowledgement](#command-stream-predictive-insights-and-alert-acknowledgement)\n* [Testing](#testing)
+* [Alerts](#alerts)
+* [Command Stream, Predictive Insights, and Alert Acknowledgement](#command-stream-predictive-insights-and-alert-acknowledgement)
+* [Testing](#testing)
 * [File Attachments](#file-attachments)
 * [Notifications](#notifications)
 * [Application Navigation](#application-navigation)
