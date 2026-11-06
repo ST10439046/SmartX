@@ -3,6 +3,7 @@
 using Microsoft.EntityFrameworkCore;
 using SmartIotApi.Models;
 using SmartIotApi.Services;
+using SmartIotApi.Services.Mesh;
 
 namespace SmartIotApi
 {
@@ -43,6 +44,7 @@ namespace SmartIotApi
             // Register the TelemetrySimulatorService for background telemetry generation
             // This service runs only in Development environment and sends random sensor data every 10 seconds
             builder.Services.AddSingleton<RealtimeCommandService>();
+            builder.Services.AddSingleton<TelemetryAvlTreeService>();
             builder.Services.AddSingleton<TelemetrySimulatorService>();
             builder.Services.AddHostedService(provider => provider.GetRequiredService<TelemetrySimulatorService>());
 
@@ -82,6 +84,8 @@ BEGIN
         ON dbo.OperatorActivities (SensorMAC, ActivityType, CreatedAt DESC);
 END");
                 SeedSampleData(dbContext);
+                var telemetryIndex = scope.ServiceProvider.GetRequiredService<TelemetryAvlTreeService>();
+                telemetryIndex.Rebuild(dbContext.TelemetryData.AsNoTracking().ToList());
             }
 
             // Configure the HTTP request pipeline.
