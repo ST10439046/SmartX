@@ -135,7 +135,7 @@ public sealed class MeshController(SmartIotContext db) : ControllerBase
     {
         var sensors = await db.Sensors.AsNoTracking().Where(s => s.IsActive).ToListAsync(ct);
         var links = await db.NetworkTopologies.AsNoTracking().ToListAsync(ct);
-        var result = BuildGraph(sensors, links).MinimumSpanningForest();
+        var result = MeshAlgorithms.MinimumSpanningForest(BuildGraph(sensors, links));
         return Ok(new
         {
             algorithm = "Prim",
@@ -170,7 +170,7 @@ public sealed class MeshController(SmartIotContext db) : ControllerBase
             gatewayReachable = gateway is not null && !removed.Contains(gateway) && filtered.Vertices.Contains(gateway),
             discovery = gateway is not null && !removed.Contains(gateway) && filtered.Vertices.Contains(gateway)
                 ? MeshAlgorithms.BreadthFirst(filtered, gateway) : Array.Empty<string>(),
-            components = filtered.MinimumSpanningForest().Components,
+            components = MeshAlgorithms.MinimumSpanningForest(filtered).Components,
             warning = "Simulation is isolated. No sensor, telemetry, or stored network link was modified."
         });
     }
