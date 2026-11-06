@@ -1323,19 +1323,20 @@ This checklist is the source of truth for what has been completed and what remai
 - [x] Frontend tests (3/3), ESLint, and Vite production build passed on GitHub Actions.
 - [x] Docker Compose validation and image builds passed on GitHub Actions.
 - [x] Extend CI to start the complete SQL Server/API/frontend Docker stack and test the seeded mesh API end-to-end.
-- [ ] Confirm the new full Docker integration job passes; repair any startup, schema, seed, or API integration failures.
+- [x] Full Docker integration job passed: SQL Server bootstrapped, API and frontend started, and all seeded mesh API assertions passed.
 - [ ] Run `docker compose config` and build/start the complete Docker stack.
-- [ ] Verify the startup schema patch against both a fresh Docker database and an existing persistent database volume.
-- [ ] Walk through every expected result in [the mesh demo and test routine](docs/MESH-DEMO-TEST-ROUTINE.md), including gateway changes, BFS/DFS, Dijkstra, Prim, isolated-node handling, failure simulation, and AVL telemetry range.
+- [x] Verify startup schema creation against a fresh Docker database volume in CI.
+- [ ] Verify the startup schema patch against an existing persistent database volume containing the earlier Smart-X schema.
+- [ ] Walk through the UI manually using [the mesh demo and test routine](docs/MESH-DEMO-TEST-ROUTINE.md), including gateway changes, BFS/DFS, Dijkstra, Prim, isolated-node handling, failure simulation, and AVL telemetry range.
 - [ ] Fix any integration defects found during the Docker walkthrough and update this checklist.
 - [ ] Capture final test evidence/screenshots and update the Part 3 implementation/evaluation report if required by the assessment brief.
 - [ ] Review the feature branch diff, then merge the pull request into `master` only after CI and manual Docker verification are green.
 
 ### Current verification snapshot
 
-- Latest completed verification: backend Release build passed with 0 errors and all 12 xUnit tests passed; frontend tests (3/3), ESLint, and Vite build passed; Docker Compose validation and image builds passed.
-- A full-stack Docker integration step has now been added to CI. It checks database startup, the six-node/two-component seed, BFS/DFS, Dijkstra's expected cost 35, Prim's expected cost 57, isolated-node rejection, temporary failure simulation, gateway persistence, AVL telemetry lookup, and frontend HTTP availability.
-- The new end-to-end Docker job is awaiting its first result. The manual browser walkthrough on the operator's Windows machine is still required after CI succeeds.
+- Latest completed GitHub Actions run: all 3 jobs passed. Backend Release build succeeded (0 errors) and all 12 xUnit tests passed. Frontend tests passed (3/3), ESLint passed, and Vite production build passed.
+- Full Docker integration passed on a fresh SQL Server volume: database bootstrap, six-node/two-component seed, BFS/DFS, Dijkstra cost 35, Prim cost 57, isolated-node 404, temporary node-failure simulation, gateway selection persistence, AVL telemetry range, and frontend HTTP response.
+- Still outstanding: test the schema upgrade against an older persistent database volume, perform the manual browser walkthrough on the operator's Windows machine, capture assessment evidence, and merge after review.
 
 ### Continuation instructions
 
