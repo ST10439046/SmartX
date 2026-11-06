@@ -31,9 +31,8 @@ public sealed class MeshAlgorithmsTests
     {
         var result = MeshAlgorithms.DepthFirst(CreateGraph(), "A");
 
-        Assert.Equal(5, result.Count);
+        Assert.Equal(new[] { "A", "B", "C", "D", "E" }, result);
         Assert.Equal(5, result.Distinct(StringComparer.OrdinalIgnoreCase).Count());
-        Assert.Equal("A", result[0]);
     }
 
     [Fact]
@@ -54,6 +53,20 @@ public sealed class MeshAlgorithmsTests
         Assert.Equal(4, result.Edges.Count);
         Assert.Equal(2, result.Components.Count);
         Assert.Contains(result.Components, component => component.Contains("ISOLATED"));
+    }
+
+    [Fact]
+    public void Dijkstra_ReturnsNullForAnUnreachableDestination()
+    {
+        var result = MeshAlgorithms.ShortestPath(CreateGraph(), "A", "ISOLATED");
+
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public void Traversal_RejectsAnUnknownStartingNode()
+    {
+        Assert.Throws<ArgumentException>(() => MeshAlgorithms.BreadthFirst(CreateGraph(), "MISSING"));
     }
 
     [Fact]
