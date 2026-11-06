@@ -191,6 +191,10 @@ public partial class SmartIotContext : DbContext
                 .HasMaxLength(50)
                 .IsUnicode(false);
             entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.IsGateway).HasDefaultValue(false);
+            entity.HasIndex(e => e.IsGateway).IsUnique()
+                .HasFilter("[IsGateway] = 1")
+                .HasDatabaseName("UX_Sensors_SingleGateway");
 
             // Foreign key relationship to DeploymentNode
             entity.HasOne(d => d.DeploymentNode)
