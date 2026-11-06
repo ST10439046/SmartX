@@ -153,6 +153,7 @@ public partial class SmartIotContext : DbContext
                 .HasMaxLength(17)
                 .IsUnicode(false)
                 .HasColumnName("ToNodeMAC");
+            entity.Property(e => e.SignalStrength).HasDefaultValue(50d).IsRequired();
 
             entity.HasOne(d => d.FromNodeMacNavigation).WithMany(p => p.NetworkTopologyFromNodeMacNavigations)
                 .HasForeignKey(d => d.FromNodeMac)
