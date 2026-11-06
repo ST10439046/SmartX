@@ -776,7 +776,20 @@ PUT    /api/commandhistory/{id}
 DELETE /api/commandhistory/{id}
 ```
 
-## Network Topology API
+## Network Topology and Mesh API
+
+| Method | Endpoint | Purpose |
+| --- | --- | --- |
+| GET | `/api/mesh/overview` | Nodes, links, gateway, telemetry freshness, and component counts |
+| PUT | `/api/mesh/gateway` | Select the operator-managed gateway using `{ "sensorMac": "..." }` |
+| GET | `/api/mesh/discovery?algorithm=bfs` | BFS traversal from the selected gateway |
+| GET | `/api/mesh/discovery?algorithm=dfs` | DFS traversal from the selected gateway |
+| GET | `/api/mesh/routes?destination={mac}` | Dijkstra lowest-cost path from gateway |
+| GET | `/api/mesh/mst` | Prim minimum spanning forest |
+| POST | `/api/mesh/simulations/failures` | Simulate failed sensor MACs and/or link IDs without persisting changes |
+| GET | `/api/mesh/telemetry/range?fromUtc={iso}&toUtc={iso}&sensorMac={mac}` | Query historical readings through the AVL timestamp index |
+
+The existing topology CRUD API remains available:
 
 ```text
 GET    /api/networktopology
@@ -1196,7 +1209,7 @@ The current implementation includes sensor telemetry, real-time command stream a
 
 # Part 2: Real-Time Command Stream and Device Management
 
-Pillar 2 is available from the **Real-Time Command Stream and History** navigation entry. Pillar 1 remains available, and Pillar 3 remains disabled.
+Pillar 2 is available from the **Real-Time Command Stream and History** navigation entry. Pillar 1, Pillar 2, and the Part 3 network topology pillar are available.
 
 ## Part 2 implementation
 
