@@ -121,10 +121,12 @@ namespace SmartIotApi.Controllers
             if (activeCount != 2)
                 return "Both link endpoints must be registered active sensors.";
 
-            var duplicate = await _context.NetworkTopologies.AnyAsync(link =>
-                link.LinkId != excludedLinkId &&
-                ((link.FromNodeMac == endpoints[0] && link.ToNodeMac == endpoints[1]) ||
-                 (link.FromNodeMac == endpoints[1] && link.ToNodeMac == endpoints[0])));
+            var existingLinks = _context.NetworkTopologies.AsQueryable();
+            if (excludedLinkId.HasValue)
+                existingLinks = existingLinks.Where(link => link.LinkId != excludedLinkId.Value);
+            var duplicate = await existingLinks.AnyAsync(link =>
+                (link.FromNodeMac == endpoints[0] && link.ToNodeMac == endpoints[1]) ||
+                (link.FromNodeMac == endpoints[1] && link.ToNodeMac == endpoints[0]));
             if (duplicate)
                 return "A link already exists between these sensors.";
             return null;
