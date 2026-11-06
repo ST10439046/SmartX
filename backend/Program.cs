@@ -347,7 +347,7 @@ END");
                         new TelemetryDatum { SensorMac = sensorMac, DataType = "reading", DataValue = 42.5, Timestamp = now.AddMinutes(-30) },
                         new TelemetryDatum { SensorMac = sensorMac, DataType = "reading", DataValue = 43.2, Timestamp = now.AddMinutes(-18) },
                         new TelemetryDatum { SensorMac = sensorMac, DataType = "reading", DataValue = 44.7, Timestamp = now.AddMinutes(-7) },
-                        new TelemetryDatum { SensorMac = sensorMac, DataType = "reading", DataValue = 45.0, Timestamp = now.AddMinutes(-1) }
+                        new TelemetryDatum { SensorMac = sensorMac, DataType = "reading", DataValue = 45.0, Timestamp = now.AddSeconds(-5) }
                     });
                     break;
             }
