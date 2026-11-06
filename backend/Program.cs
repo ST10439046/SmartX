@@ -269,9 +269,9 @@ END");
             {
                 ("00:1A:2B:3C:4D:5E", "00:1A:2B:3C:4D:5F", 90),
                 ("00:1A:2B:3C:4D:5E", "00:1A:2B:3C:4D:60", 72),
-                ("00:1A:2B:3C:4D:5F", "00:1A:2B:3C:4D:60", 84),
-                ("00:1A:2B:3C:4D:5F", "00:1A:2B:3C:4D:61", 63),
-                ("00:1A:2B:3C:4D:60", "00:1A:2B:3C:4D:61", 95),
+                ("00:1A:2B:3C:4D:5F", "00:1A:2B:3C:4D:61", 84),
+                ("00:1A:2B:3C:4D:60", "00:1A:2B:3C:4D:61", 63),
+                ("00:1A:2B:3C:4D:60", "00:1A:2B:3C:4D:62", 95),
                 ("00:1A:2B:3C:4D:61", "00:1A:2B:3C:4D:62", 78)
             };
 
@@ -317,7 +317,7 @@ END");
                         new TelemetryDatum { SensorMac = sensorMac, DataType = "temperature", DataValue = 23.1, Timestamp = now.AddMinutes(-35) },
                         new TelemetryDatum { SensorMac = sensorMac, DataType = "temperature", DataValue = 24.7, Timestamp = now.AddMinutes(-20) },
                         new TelemetryDatum { SensorMac = sensorMac, DataType = "temperature", DataValue = 25.4, Timestamp = now.AddMinutes(-9) },
-                        new TelemetryDatum { SensorMac = sensorMac, DataType = "temperature", DataValue = 26.1, Timestamp = now.AddMinutes(-3) }
+                        new TelemetryDatum { SensorMac = sensorMac, DataType = "temperature", DataValue = 26.1, Timestamp = now.AddSeconds(-5) }
                     });
                     break;
 
@@ -327,7 +327,7 @@ END");
                         new TelemetryDatum { SensorMac = sensorMac, DataType = "powerWattage", DataValue = 312, Timestamp = now.AddMinutes(-42) },
                         new TelemetryDatum { SensorMac = sensorMac, DataType = "powerWattage", DataValue = 338, Timestamp = now.AddMinutes(-24) },
                         new TelemetryDatum { SensorMac = sensorMac, DataType = "powerWattage", DataValue = 352, Timestamp = now.AddMinutes(-10) },
-                        new TelemetryDatum { SensorMac = sensorMac, DataType = "powerWattage", DataValue = 367, Timestamp = now.AddMinutes(-2) }
+                        new TelemetryDatum { SensorMac = sensorMac, DataType = "powerWattage", DataValue = 367, Timestamp = now.AddSeconds(-5) }
                     });
                     break;
 
@@ -337,7 +337,7 @@ END");
                         new TelemetryDatum { SensorMac = sensorMac, DataType = "valveState", DataValue = 1, Timestamp = now.AddMinutes(-36) },
                         new TelemetryDatum { SensorMac = sensorMac, DataType = "valveState", DataValue = 0, Timestamp = now.AddMinutes(-22) },
                         new TelemetryDatum { SensorMac = sensorMac, DataType = "valveState", DataValue = 1, Timestamp = now.AddMinutes(-8) },
-                        new TelemetryDatum { SensorMac = sensorMac, DataType = "valveState", DataValue = 1, Timestamp = now.AddMinutes(-1) }
+                        new TelemetryDatum { SensorMac = sensorMac, DataType = "valveState", DataValue = 1, Timestamp = now.AddSeconds(-5) }
                     });
                     break;
 
