@@ -1334,7 +1334,7 @@ This checklist is the source of truth for what has been completed and what remai
 
 ### Current verification snapshot
 
-- Latest completed GitHub Actions run (#129): all 3 jobs passed. Backend Release build succeeded (0 errors) and all 12 xUnit tests passed. Frontend tests passed (3/3), ESLint passed, and Vite production build passed.
+- Latest completed GitHub Actions run (#130): all 3 jobs passed. Backend Release build succeeded (0 errors) and all 12 xUnit tests passed. Frontend tests passed (3/3), ESLint passed, and Vite production build passed.
 - Full Docker integration passed on a fresh SQL Server volume: database bootstrap, six-node/two-component seed, BFS/DFS, Dijkstra cost 35, Prim cost 57, isolated-node 404, failure simulation without persisted changes, duplicate-link and invalid signal-quality rejection, gateway selection persistence, AVL telemetry range, and frontend HTTP response.
 - Still outstanding: test the schema upgrade against an older persistent database volume, perform the manual browser walkthrough on the operator's Windows machine, capture assessment evidence, and merge after review.
 
