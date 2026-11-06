@@ -13,12 +13,14 @@ public sealed class TelemetryAvlTreeService
 
     public void Rebuild(IEnumerable<TelemetryDatum> records)
     {
-        var replacement = new TelemetryAvlTree<TelemetryDatum>();
-        foreach (var record in records)
-            if (record.Timestamp.HasValue)
-                replacement.Add(record.Timestamp.Value, record);
         lock (_sync)
+        {
+            var replacement = new TelemetryAvlTree<TelemetryDatum>();
+            foreach (var record in records)
+                if (record.Timestamp.HasValue)
+                    replacement.Add(record.Timestamp.Value, record);
             _tree = replacement;
+        }
     }
 
     public void Add(TelemetryDatum record)
