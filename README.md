@@ -1317,10 +1317,13 @@ This checklist is the source of truth for what has been completed and what remai
 
 ### Remaining before merge / assessment handoff
 
-- [ ] Re-run GitHub Actions after the xUnit test-import repair; confirm the backend test project now compiles and passes.
-- [x] Backend .NET 10 restore and Release build passed on GitHub Actions (33 pre-existing compiler warnings, 0 errors).
+- [x] Re-run GitHub Actions after the xUnit test-import repair; backend tests now compile and pass.
+- [x] Backend .NET 10 restore and Release build passed on GitHub Actions (33 existing compiler warnings, 0 errors).
+- [x] All 12 backend tests passed on GitHub Actions.
 - [x] Frontend tests (3/3), ESLint, and Vite production build passed on GitHub Actions.
-- [x] Docker Compose validation and image-build job passed on GitHub Actions.
+- [x] Docker Compose validation and image builds passed on GitHub Actions.
+- [x] Extend CI to start the complete SQL Server/API/frontend Docker stack and test the seeded mesh API end-to-end.
+- [ ] Confirm the new full Docker integration job passes; repair any startup, schema, seed, or API integration failures.
 - [ ] Run `docker compose config` and build/start the complete Docker stack.
 - [ ] Verify the startup schema patch against both a fresh Docker database and an existing persistent database volume.
 - [ ] Walk through every expected result in [the mesh demo and test routine](docs/MESH-DEMO-TEST-ROUTINE.md), including gateway changes, BFS/DFS, Dijkstra, Prim, isolated-node handling, failure simulation, and AVL telemetry range.
@@ -1330,10 +1333,9 @@ This checklist is the source of truth for what has been completed and what remai
 
 ### Current verification snapshot
 
-- Latest completed CI run before the xUnit import fix: backend API restore/build succeeded; backend test compilation failed because the new mesh test file omitted `using Xunit;`. That import has now been added and a new CI run is in progress.
-- Frontend tests (3/3), ESLint, and Vite build passed after the React purity/effect repair.
-- Docker Compose validation and image-build job passed in that same run.
-- Full interactive Docker database startup and manual UI walkthrough have not yet been performed. Do not treat the feature as fully verified until those unchecked items are completed.
+- Latest completed verification: backend Release build passed with 0 errors and all 12 xUnit tests passed; frontend tests (3/3), ESLint, and Vite build passed; Docker Compose validation and image builds passed.
+- A full-stack Docker integration step has now been added to CI. It checks database startup, the six-node/two-component seed, BFS/DFS, Dijkstra's expected cost 35, Prim's expected cost 57, isolated-node rejection, temporary failure simulation, gateway persistence, AVL telemetry lookup, and frontend HTTP availability.
+- The new end-to-end Docker job is awaiting its first result. The manual browser walkthrough on the operator's Windows machine is still required after CI succeeds.
 
 ### Continuation instructions
 
