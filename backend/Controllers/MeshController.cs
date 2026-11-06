@@ -49,7 +49,7 @@ public sealed class MeshController(SmartIotContext db) : ControllerBase
                 offlineNodes = nodes.Count(node => node.Status == "Offline"),
                 unknownNodes = nodes.Count(node => node.Status == "Unknown"),
                 totalLinks = links.Count,
-                connectedComponents = MeshAlgorithms.MinimumSpanningForest(BuildGraph(sensors, await db.NetworkTopologies.AsNoTracking().ToListAsync(ct))).Components.Count
+                connectedComponents = MeshAlgorithms.MinimumSpanningForest(BuildGraph(sensors.Where(sensor => sensor.IsActive), await db.NetworkTopologies.AsNoTracking().ToListAsync(ct))).Components.Count
             },
             signalStrengthMeaning = "Normalized simulated signal quality percentage (0-100), not measured dBm.",
             routingCostMeaning = "101 - signal quality; lower is better."
@@ -66,7 +66,10 @@ public sealed class MeshController(SmartIotContext db) : ControllerBase
         var sensor = await db.Sensors.FirstOrDefaultAsync(s => s.Macaddress == mac, ct);
         if (sensor is null) return NotFound(new { message = "Registered sensor was not found." });
         if (!sensor.IsActive) return Conflict(new { message = "A disabled sensor cannot be selected as the gateway." });
-        await db.Sensors.Where(s => s.IsGateway).ExecuteUpdateAsync(update => update.SetProperty(s => s.IsGateway, false), ct);
+        var previousGateways = await db.Sensors.Where(s => s.IsGateway).ToListAsync(ct);
+        foreach (var previousGateway in previousGateways)
+            previousGateway.IsGateway = false;
+        await db.SaveChangesAsync(ct);
         sensor.IsGateway = true;
         await db.SaveChangesAsync(ct);
         await transaction.CommitAsync(ct);
