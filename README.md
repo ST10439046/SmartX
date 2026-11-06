@@ -4,7 +4,7 @@
 **Student Number:** ST10439046
 **Owner and Contributor:** ST10439046
 
-Smart-X is an IoT monitoring and management platform developed as part of the PROG7312 Programming 3 POE assignment. The system combines a React-based web frontend with an ASP.NET Core .NET 10 backend API to provide sensor registration, telemetry monitoring, alert management, file attachments, and the foundation for future command and network-management functionality.
+Smart-X is an IoT monitoring and management platform developed as part of the PROG7312 Programming 3 POE assignment. The system combines a React-based web frontend with an ASP.NET Core .NET 10 backend API to provide sensor registration, telemetry monitoring, alert management, file attachments, real-time command history, and operator-managed mesh networking.
 
 The platform is designed around a smart-building and smart-facility environment where connected sensors can be registered, monitored, and managed through a central web interface.
 
