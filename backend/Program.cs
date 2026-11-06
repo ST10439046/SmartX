@@ -57,6 +57,17 @@ IF COL_LENGTH('dbo.ActiveAlerts', 'AcknowledgedAt') IS NULL
     ALTER TABLE dbo.ActiveAlerts ADD AcknowledgedAt datetime2 NULL;
 IF COL_LENGTH('dbo.ActiveAlerts', 'AcknowledgedBy') IS NULL
     ALTER TABLE dbo.ActiveAlerts ADD AcknowledgedBy nvarchar(120) NULL;
+IF COL_LENGTH('dbo.Sensors', 'IsGateway') IS NULL
+    ALTER TABLE dbo.Sensors ADD IsGateway bit NOT NULL CONSTRAINT DF_Sensors_IsGateway DEFAULT (0);
+IF COL_LENGTH('dbo.NetworkTopology', 'SignalStrength') IS NULL
+    ALTER TABLE dbo.NetworkTopology ADD SignalStrength float NULL;
+UPDATE dbo.NetworkTopology SET SignalStrength = 50 WHERE SignalStrength IS NULL;
+IF EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('dbo.NetworkTopology') AND name = 'SignalStrength' AND is_nullable = 1)
+    ALTER TABLE dbo.NetworkTopology ALTER COLUMN SignalStrength float NOT NULL;
+IF NOT EXISTS (SELECT 1 FROM sys.check_constraints WHERE name = 'CK_NetworkTopology_SignalStrength')
+    ALTER TABLE dbo.NetworkTopology ADD CONSTRAINT CK_NetworkTopology_SignalStrength CHECK (SignalStrength >= 0 AND SignalStrength <= 100);
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'UX_Sensors_SingleGateway' AND object_id = OBJECT_ID('dbo.Sensors'))
+    CREATE UNIQUE INDEX UX_Sensors_SingleGateway ON dbo.Sensors(IsGateway) WHERE IsGateway = 1;
 IF OBJECT_ID('dbo.OperatorActivities', 'U') IS NULL
 BEGIN
     CREATE TABLE dbo.OperatorActivities (
@@ -203,6 +214,39 @@ END");
                     RegisteredAt = DateTime.UtcNow.AddDays(-14),
                     IsActive = true,
                     DeploymentNodeId = zone1.NodeId
+                },
+                new Sensor
+                {
+                    Macaddress = "00:1A:2B:3C:4D:61",
+                    Room = "Water Storage",
+                    Zone = "North Plot",
+                    NodeId = "ENV-04",
+                    Category = "Environmental",
+                    RegisteredAt = DateTime.UtcNow.AddDays(-12),
+                    IsActive = true,
+                    DeploymentNodeId = sensorLocation.NodeId
+                },
+                new Sensor
+                {
+                    Macaddress = "00:1A:2B:3C:4D:62",
+                    Room = "Control Room",
+                    Zone = "Utility Wing",
+                    NodeId = "PWR-05",
+                    Category = "Power",
+                    RegisteredAt = DateTime.UtcNow.AddDays(-9),
+                    IsActive = true,
+                    DeploymentNodeId = subZoneB.NodeId
+                },
+                new Sensor
+                {
+                    Macaddress = "00:1A:2B:3C:4D:63",
+                    Room = "Remote Weather Station",
+                    Zone = "East Plot",
+                    NodeId = "ENV-06",
+                    Category = "Environmental",
+                    RegisteredAt = DateTime.UtcNow.AddDays(-6),
+                    IsActive = true,
+                    DeploymentNodeId = zone1.NodeId
                 }
             };
 
@@ -212,6 +256,37 @@ END");
                 {
                     context.Sensors.Add(sensor);
                 }
+            }
+
+            context.SaveChanges();
+
+            // The demo starts with one operator-selected gateway and a deterministic five-node mesh.
+            var gateway = context.Sensors.First(s => s.Macaddress == "00:1A:2B:3C:4D:5E");
+            if (!context.Sensors.Any(s => s.IsGateway))
+                gateway.IsGateway = true;
+
+            var sampleLinks = new (string From, string To, double Quality)[]
+            {
+                ("00:1A:2B:3C:4D:5E", "00:1A:2B:3C:4D:5F", 90),
+                ("00:1A:2B:3C:4D:5E", "00:1A:2B:3C:4D:60", 72),
+                ("00:1A:2B:3C:4D:5F", "00:1A:2B:3C:4D:60", 84),
+                ("00:1A:2B:3C:4D:5F", "00:1A:2B:3C:4D:61", 63),
+                ("00:1A:2B:3C:4D:60", "00:1A:2B:3C:4D:61", 95),
+                ("00:1A:2B:3C:4D:61", "00:1A:2B:3C:4D:62", 78)
+            };
+
+            foreach (var link in sampleLinks)
+            {
+                var exists = context.NetworkTopologies.Any(item =>
+                    (item.FromNodeMac == link.From && item.ToNodeMac == link.To) ||
+                    (item.FromNodeMac == link.To && item.ToNodeMac == link.From));
+                if (!exists)
+                    context.NetworkTopologies.Add(new NetworkTopology
+                    {
+                        FromNodeMac = link.From,
+                        ToNodeMac = link.To,
+                        SignalStrength = link.Quality
+                    });
             }
 
             context.SaveChanges();
