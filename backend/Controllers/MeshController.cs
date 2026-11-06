@@ -110,6 +110,8 @@ public sealed class MeshController(SmartIotContext db) : ControllerBase
         [FromQuery] string? sensorMac,
         CancellationToken ct)
     {
+        if (fromUtc == default || toUtc == default)
+            return BadRequest(new { message = "Both fromUtc and toUtc are required UTC timestamps." });
         if (fromUtc > toUtc)
             return BadRequest(new { message = "fromUtc must be earlier than or equal to toUtc." });
         if ((toUtc - fromUtc).TotalDays > 31)
@@ -165,14 +167,15 @@ public sealed class MeshController(SmartIotContext db) : ControllerBase
             !removed.Contains(link.FromNodeMac) && !removed.Contains(link.ToNodeMac)))
             filtered.AddEdge(link.FromNodeMac, link.ToNodeMac, link.SignalStrength);
         var gateway = sensors.FirstOrDefault(sensor => sensor.IsGateway)?.Macaddress;
+        IReadOnlyList<string> discovery = gateway is not null && !removed.Contains(gateway) && filtered.Vertices.Contains(gateway)
+            ? MeshAlgorithms.BreadthFirst(filtered, gateway) : Array.Empty<string>();
         return Ok(new
         {
             simulated = true,
             failedSensors = removed,
             failedLinks,
             gatewayReachable = gateway is not null && !removed.Contains(gateway) && filtered.Vertices.Contains(gateway),
-            discovery = gateway is not null && !removed.Contains(gateway) && filtered.Vertices.Contains(gateway)
-                ? MeshAlgorithms.BreadthFirst(filtered, gateway) : Array.Empty<string>(),
+            discovery,
             components = MeshAlgorithms.MinimumSpanningForest(filtered).Components,
             warning = "Simulation is isolated. No sensor, telemetry, or stored network link was modified."
         });
