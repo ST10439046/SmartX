@@ -63,7 +63,7 @@ IF COL_LENGTH('dbo.Sensors', 'IsGateway') IS NULL
     ALTER TABLE dbo.Sensors ADD IsGateway bit NOT NULL CONSTRAINT DF_Sensors_IsGateway DEFAULT (0);
 IF COL_LENGTH('dbo.NetworkTopology', 'SignalStrength') IS NULL
     ALTER TABLE dbo.NetworkTopology ADD SignalStrength float NULL;
-UPDATE dbo.NetworkTopology SET SignalStrength = 50 WHERE SignalStrength IS NULL;
+UPDATE dbo.NetworkTopology SET SignalStrength = 50 WHERE SignalStrength IS NULL OR SignalStrength < 0 OR SignalStrength > 100;
 IF EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('dbo.NetworkTopology') AND name = 'SignalStrength' AND is_nullable = 1)
     ALTER TABLE dbo.NetworkTopology ALTER COLUMN SignalStrength float NOT NULL;
 IF NOT EXISTS (SELECT 1 FROM sys.check_constraints WHERE name = 'CK_NetworkTopology_SignalStrength')
