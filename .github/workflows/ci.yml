@@ -94,5 +94,94 @@ jobs:
       - name: Validate Compose configuration
         run: docker compose config --quiet
 
-      - name: Build API and frontend images
-        run: docker compose build backend frontend
+      - name: Build and start the full Docker stack
+        run: docker compose up --build -d
+
+      - name: Wait for the API and verify the seeded mesh
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          for attempt in $(seq 1 60); do
+            if curl --fail --silent http://localhost:5231/api/mesh/overview --output /tmp/mesh-overview.json; then
+              break
+            fi
+            if [ "$attempt" -eq 60 ]; then
+              echo "Mesh API did not become ready within five minutes."
+              docker compose ps
+              docker compose logs --tail=200 backend sqlserver database-init
+              exit 1
+            fi
+            sleep 5
+          done
+
+          echo "Checking the six-node seeded topology..."
+          jq -e '.summary.totalNodes == 6 and .summary.totalLinks == 6 and .summary.connectedComponents == 2 and .gateway.nodeId == "ENV-01"' /tmp/mesh-overview.json
+
+          echo "Checking BFS and DFS reach the five-node gateway component..."
+          curl --fail --silent "http://localhost:5231/api/mesh/discovery?algorithm=bfs" | jq -e '.visitedCount == 5 and (.visitedNodes | length) == 5'
+          curl --fail --silent "http://localhost:5231/api/mesh/discovery?algorithm=dfs" | jq -e '.visitedCount == 5 and (.visitedNodes | length) == 5'
+
+          echo "Checking Dijkstra's known lowest-cost route..."
+          curl --fail --silent "http://localhost:5231/api/mesh/routes?destination=00:1A:2B:3C:4D:62" | jq -e '.totalCost == 35 and .hops == 2 and .path == ["00:1A:2B:3C:4D:5E", "00:1A:2B:3C:4D:60", "00:1A:2B:3C:4D:62"]'
+
+          echo "Checking the minimum spanning forest..."
+          curl --fail --silent http://localhost:5231/api/mesh/mst | jq -e '.totalCost == 57 and (.edges | length) == 4 and (.components | length) == 2'
+
+          echo "Checking isolated-node route rejection..."
+          isolated_status=$(curl --silent --output /tmp/isolated-route.json --write-out "%{http_code}" "http://localhost:5231/api/mesh/routes?destination=00:1A:2B:3C:4D:63")
+          test "$isolated_status" = "404"
+          jq -e '.message | contains("No route exists")' /tmp/isolated-route.json
+
+          echo "Checking temporary node-failure simulation..."
+          curl --fail --silent --request POST http://localhost:5231/api/mesh/simulations/failures \
+            --header "Content-Type: application/json" \
+            --data '{"failedSensorMacs":["00:1A:2B:3C:4D:61"],"failedLinkIds":[]}' |
+            jq -e '.simulated == true and .gatewayReachable == true and (.discovery | length) == 4 and (.components | length) == 2'
+          curl --fail --silent http://localhost:5231/api/mesh/overview |
+            jq -e 'any(.nodes[]; .macaddress == "00:1A:2B:3C:4D:61") and .summary.totalLinks == 6'
+
+          echo "Checking duplicate-link and invalid signal-quality validation..."
+          duplicate_status=$(curl --silent --output /tmp/duplicate-link.json --write-out "%{http_code}" \
+            --request POST http://localhost:5231/api/networktopology \
+            --header "Content-Type: application/json" \
+            --data '{"fromNodeMac":"00:1A:2B:3C:4D:5E","toNodeMac":"00:1A:2B:3C:4D:5F","signalStrength":99}')
+          test "$duplicate_status" = "400"
+          invalid_quality_status=$(curl --silent --output /tmp/invalid-quality.json --write-out "%{http_code}" \
+            --request POST http://localhost:5231/api/networktopology \
+            --header "Content-Type: application/json" \
+            --data '{"fromNodeMac":"00:1A:2B:3C:4D:5E","toNodeMac":"00:1A:2B:3C:4D:63","signalStrength":101}')
+          test "$invalid_quality_status" = "400"
+
+          echo "Checking gateway selection persistence..."
+          curl --fail --silent --request PUT http://localhost:5231/api/mesh/gateway \
+            --header "Content-Type: application/json" \
+            --data '{"sensorMac":"00:1A:2B:3C:4D:5F"}' | jq -e '.success == true'
+          curl --fail --silent http://localhost:5231/api/mesh/overview | jq -e '.gateway.nodeId == "PWR-02"'
+          curl --fail --silent --request PUT http://localhost:5231/api/mesh/gateway \
+            --header "Content-Type: application/json" \
+            --data '{"sensorMac":"00:1A:2B:3C:4D:5E"}' | jq -e '.success == true'
+
+          echo "Checking the hydrated AVL telemetry index..."
+          from_utc=$(date -u -d '24 hours ago' +%Y-%m-%dT%H:%M:%SZ)
+          to_utc=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          curl --fail --silent --get http://localhost:5231/api/mesh/telemetry/range \
+            --data-urlencode "fromUtc=$from_utc" \
+            --data-urlencode "toUtc=$to_utc" \
+            --data-urlencode "sensorMac=00:1A:2B:3C:4D:5E" |
+            jq -e '.count >= 4 and .index == "In-memory AVL timestamp index"'
+
+          echo "Checking the frontend container..."
+          curl --fail --silent http://localhost:8088/ | grep -qi 'id="root"'
+
+          echo "Docker mesh integration checks passed."
+
+      - name: Show Docker diagnostics on failure
+        if: failure()
+        run: |
+          docker compose ps
+          docker compose logs --tail=200 backend sqlserver database-init frontend
+
+      - name: Stop the Docker stack and remove CI volumes
+        if: always()
+        run: docker compose down --volumes --remove-orphans

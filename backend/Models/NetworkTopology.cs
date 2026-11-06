@@ -13,7 +13,8 @@ public partial class NetworkTopology
 
     public string ToNodeMac { get; set; } = null!;
 
-    public double? SignalStrength { get; set; }
+    /// <summary>Normalized simulated link quality percentage (0-100), not physical dBm.</summary>
+    public double SignalStrength { get; set; } = 50;
 
     /// <summary>
     /// Navigation property to the source sensor in the network link.

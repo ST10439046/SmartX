@@ -37,7 +37,7 @@ const Sidebar = () => {
       name: 'Network Topology and Mesh Routing',
       icon: Zap,
       path: '/topology',
-      enabled: false,
+      enabled: true,
       description: 'Visualize sensor network topology and routing',
     },
   ];
