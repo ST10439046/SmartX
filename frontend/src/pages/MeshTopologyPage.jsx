@@ -16,6 +16,11 @@ function displayName(node) {
   return node.nodeId || node.macaddress;
 }
 
+function toLocalDateTimeInput(date) {
+  const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+  return localDate.toISOString().slice(0, 16);
+}
+
 function MeshGraph({ nodes, links, selectedMac, onSelect }) {
   const positions = useMemo(() => {
     const centerX = 350;
@@ -106,8 +111,8 @@ export default function MeshTopologyPage() {
   const [mst, setMst] = useState(null);
   const [simulation, setSimulation] = useState(null);
   const [telemetryRange, setTelemetryRange] = useState(null);
-  const [rangeStart, setRangeStart] = useState(new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().slice(0, 16));
-  const [rangeEnd, setRangeEnd] = useState(new Date().toISOString().slice(0, 16));
+  const [rangeStart, setRangeStart] = useState(toLocalDateTimeInput(new Date(Date.now() - 24 * 60 * 60 * 1000)));
+  const [rangeEnd, setRangeEnd] = useState(toLocalDateTimeInput(new Date()));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
@@ -224,6 +229,7 @@ export default function MeshTopologyPage() {
     setRoute(null);
     setMst(null);
     setSimulation(null);
+    setTelemetryRange(null);
   };
 
   return (
