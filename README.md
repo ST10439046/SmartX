@@ -1317,9 +1317,10 @@ This checklist is the source of truth for what has been completed and what remai
 
 ### Remaining before merge / assessment handoff
 
-- [ ] Re-run GitHub Actions after the latest frontend lint repair; resolve any remaining CI failures.
-- [ ] Verify backend .NET build and all backend tests on the CI runner.
-- [ ] Verify frontend `npm test`, `npm run lint`, and `npm run build` on the CI runner.
+- [ ] Re-run GitHub Actions after the xUnit test-import repair; confirm the backend test project now compiles and passes.
+- [x] Backend .NET 10 restore and Release build passed on GitHub Actions (33 pre-existing compiler warnings, 0 errors).
+- [x] Frontend tests (3/3), ESLint, and Vite production build passed on GitHub Actions.
+- [x] Docker Compose validation and image-build job passed on GitHub Actions.
 - [ ] Run `docker compose config` and build/start the complete Docker stack.
 - [ ] Verify the startup schema patch against both a fresh Docker database and an existing persistent database volume.
 - [ ] Walk through every expected result in [the mesh demo and test routine](docs/MESH-DEMO-TEST-ROUTINE.md), including gateway changes, BFS/DFS, Dijkstra, Prim, isolated-node handling, failure simulation, and AVL telemetry range.
@@ -1329,9 +1330,10 @@ This checklist is the source of truth for what has been completed and what remai
 
 ### Current verification snapshot
 
-- Last observed CI run: frontend tests passed (3/3), but ESLint failed on React purity and effect rules in `MeshTopologyPage.jsx`.
-- Those two lint findings have been repaired in the latest branch commit. A fresh CI run is required to confirm the repair.
-- Full .NET and Docker verification has not yet been performed from this session. Do not treat the feature as fully verified until the unchecked items above are completed.
+- Latest completed CI run before the xUnit import fix: backend API restore/build succeeded; backend test compilation failed because the new mesh test file omitted `using Xunit;`. That import has now been added and a new CI run is in progress.
+- Frontend tests (3/3), ESLint, and Vite build passed after the React purity/effect repair.
+- Docker Compose validation and image-build job passed in that same run.
+- Full interactive Docker database startup and manual UI walkthrough have not yet been performed. Do not treat the feature as fully verified until those unchecked items are completed.
 
 ### Continuation instructions
 
