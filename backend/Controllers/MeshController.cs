@@ -49,7 +49,7 @@ public sealed class MeshController(SmartIotContext db) : ControllerBase
                 offlineNodes = nodes.Count(node => node.Status == "Offline"),
                 unknownNodes = nodes.Count(node => node.Status == "Unknown"),
                 totalLinks = links.Count,
-                connectedComponents = BuildGraph(sensors, await db.NetworkTopologies.AsNoTracking().ToListAsync(ct)).MinimumSpanningForest().Components.Count
+                connectedComponents = MeshAlgorithms.MinimumSpanningForest(BuildGraph(sensors, await db.NetworkTopologies.AsNoTracking().ToListAsync(ct))).Components.Count
             },
             signalStrengthMeaning = "Normalized simulated signal quality percentage (0-100), not measured dBm.",
             routingCostMeaning = "101 - signal quality; lower is better."
@@ -122,7 +122,6 @@ public sealed class MeshController(SmartIotContext db) : ControllerBase
         var sensors = await db.Sensors.AsNoTracking().Where(s => s.IsActive).ToListAsync(ct);
         var links = await db.NetworkTopologies.AsNoTracking().ToListAsync(ct);
         var removed = new HashSet<string>(request.FailedSensorMacs ?? [], StringComparer.OrdinalIgnoreCase);
-        var graph = BuildGraph(sensors.Where(sensor => !removed.Contains(sensor.Macaddress)), links);
         foreach (var failedMac in removed)
             if (!sensors.Any(sensor => string.Equals(sensor.Macaddress, failedMac, StringComparison.OrdinalIgnoreCase)))
                 return BadRequest(new { message = $"Unknown or inactive sensor in failure simulation: {failedMac}" });
