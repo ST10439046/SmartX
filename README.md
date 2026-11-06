@@ -153,15 +153,19 @@ The live operations page is available in the application navigation.
 
 ## 3. Network Topology and Mesh Routing
 
-This architectural pillar has also been reserved for future implementation.
+The mesh networking pillar is implemented as an operator-managed sensor graph.
 
-Planned functionality includes:
+* Select one registered active sensor as the gateway. The selection persists in SQL Server and a filtered unique index enforces one gateway.
+* View sensor nodes, link quality, last telemetry time and online/offline/unknown/disabled status.
+* Explore reachable nodes using breadth-first search (BFS) and depth-first search (DFS).
+* Calculate the lowest-cost gateway-to-node route using Dijkstra's algorithm.
+* Calculate a minimum spanning forest using Prim's algorithm, including disconnected components.
+* Simulate node/link failures against a temporary graph without changing stored network data.
+* Query historical telemetry through a thread-safe, in-memory AVL timestamp index hydrated from SQL Server and updated after telemetry writes.
 
-* Sensor network visualization
-* Network topology management
-* Mesh routing information
-* Network performance monitoring
-* Deployment-node relationships
+Signal strength is represented as a normalized simulated quality percentage from 0 to 100, not physical dBm. Routing cost is derived as `101 - signal quality`, so lower cost is better.
+
+The dashboard is available at `/topology`. The seeded Docker demo contains six sensors, five in the connected mesh and one isolated node, so disconnected-network behaviour can be tested immediately. See [the mesh demo and test routine](docs/MESH-DEMO-TEST-ROUTINE.md).
 
 ---
 
