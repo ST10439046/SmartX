@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Activity, AlertTriangle, GitBranch, Network, RefreshCw, Route, Router,
-  Search, ShieldCheck, Wifi, WifiOff,
+  ShieldCheck, Wifi, WifiOff,
 } from 'lucide-react';
 import { meshApi } from '../services/apiClient';
 
@@ -334,8 +334,8 @@ export default function MeshTopologyPage() {
         </div>}
         {route && <div className="mt-4 rounded-lg bg-gray-50 p-4 dark:bg-gray-800">
           <h3 className="font-semibold text-gray-900 dark:text-white">Lowest-cost route</h3>
-          <p className="mt-2 break-words text-sm text-gray-700 dark:text-gray-200">{route.Path.map((mac) => overview?.nodes?.find((node) => node.macaddress === mac)?.nodeId || mac).join(' → ')}</p>
-          <p className="mt-1 text-xs text-gray-500">Total routing cost: {route.totalCost ?? route.TotalCost} · Hops: {route.hops}</p>
+          <p className="mt-2 break-words text-sm text-gray-700 dark:text-gray-200">{route.path.map((mac) => overview?.nodes?.find((node) => node.macaddress === mac)?.nodeId || mac).join(' → ')}</p>
+          <p className="mt-1 text-xs text-gray-500">Total routing cost: {route.totalCost} · Hops: {route.hops}</p>
         </div>}
         {mst && <div className="mt-4 rounded-lg bg-gray-50 p-4 dark:bg-gray-800">
           <h3 className="font-semibold text-gray-900 dark:text-white">Prim's minimum spanning forest</h3>
