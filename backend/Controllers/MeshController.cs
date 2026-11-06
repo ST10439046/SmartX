@@ -100,6 +100,36 @@ public sealed class MeshController(SmartIotContext db) : ControllerBase
         return Ok(new { gateway, destination, route.Path, route.TotalCost, hops = route.Path.Count - 1 });
     }
 
+    [HttpGet("telemetry/range")]
+    public async Task<IActionResult> TelemetryRange(
+        [FromQuery] DateTime fromUtc,
+        [FromQuery] DateTime toUtc,
+        [FromQuery] string? sensorMac,
+        CancellationToken ct)
+    {
+        if (fromUtc > toUtc)
+            return BadRequest(new { message = "fromUtc must be earlier than or equal to toUtc." });
+        if ((toUtc - fromUtc).TotalDays > 31)
+            return BadRequest(new { message = "Telemetry range is limited to 31 days per request." });
+        var query = db.TelemetryData.AsNoTracking()
+            .Where(item => item.Timestamp >= fromUtc && item.Timestamp <= toUtc);
+        if (!string.IsNullOrWhiteSpace(sensorMac))
+            query = query.Where(item => item.SensorMac == sensorMac.Trim());
+        var records = await query.OrderBy(item => item.Timestamp).Take(10000).ToListAsync(ct);
+        var index = new TelemetryAvlTree<TelemetryDatum>();
+        foreach (var record in records)
+            if (record.Timestamp.HasValue)
+                index.Add(record.Timestamp.Value, record);
+        var ordered = index.Range(fromUtc, toUtc);
+        return Ok(new
+        {
+            fromUtc, toUtc, sensorMac,
+            count = ordered.Count,
+            index = "AVL timestamp index",
+            records = ordered
+        });
+    }
+
     [HttpGet("mst")]
     public async Task<IActionResult> MinimumSpanningTree(CancellationToken ct)
     {
