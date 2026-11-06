@@ -1,4 +1,5 @@
 using SmartIotApi.Services.Mesh;
+using Xunit;
 
 namespace SmartIotApi.Tests.Mesh;
 
