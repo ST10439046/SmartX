@@ -21,6 +21,9 @@ function toLocalDateTimeInput(date) {
   return localDate.toISOString().slice(0, 16);
 }
 
+const INITIAL_RANGE_END = toLocalDateTimeInput(new Date());
+const INITIAL_RANGE_START = toLocalDateTimeInput(new Date(Date.parse(INITIAL_RANGE_END) - 24 * 60 * 60 * 1000));
+
 function MeshGraph({ nodes, links, selectedMac, onSelect }) {
   const positions = useMemo(() => {
     const centerX = 350;
@@ -111,8 +114,8 @@ export default function MeshTopologyPage() {
   const [mst, setMst] = useState(null);
   const [simulation, setSimulation] = useState(null);
   const [telemetryRange, setTelemetryRange] = useState(null);
-  const [rangeStart, setRangeStart] = useState(toLocalDateTimeInput(new Date(Date.now() - 24 * 60 * 60 * 1000)));
-  const [rangeEnd, setRangeEnd] = useState(toLocalDateTimeInput(new Date()));
+  const [rangeStart, setRangeStart] = useState(INITIAL_RANGE_START);
+  const [rangeEnd, setRangeEnd] = useState(INITIAL_RANGE_END);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
@@ -132,7 +135,25 @@ export default function MeshTopologyPage() {
     }
   }, []);
 
-  useEffect(() => { loadOverview(); }, [loadOverview]);
+  useEffect(() => {
+    let active = true;
+
+    meshApi.getOverview()
+      .then((response) => {
+        if (!active) return;
+        setOverview(response.data);
+        setGatewayMac(response.data.gateway?.macaddress || '');
+        setSelectedMac(response.data.nodes?.[0]?.macaddress || '');
+      })
+      .catch((requestError) => {
+        if (active) setError(requestError.response?.data?.message || 'Could not load the mesh network.');
+      })
+      .finally(() => {
+        if (active) setBusy(false);
+      });
+
+    return () => { active = false; };
+  }, []);
 
   const selectedNode = overview?.nodes?.find((node) => node.macaddress === selectedMac);
   const gatewayNode = overview?.nodes?.find((node) => node.isGateway);
