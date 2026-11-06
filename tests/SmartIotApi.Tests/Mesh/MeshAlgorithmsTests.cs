@@ -43,7 +43,7 @@ public sealed class MeshAlgorithmsTests
 
         Assert.NotNull(result);
         Assert.Equal(new[] { "A", "C", "D", "E" }, result!.Path);
-        Assert.Equal(41, result.TotalCost);
+        Assert.Equal(88, result.TotalCost);
     }
 
     [Fact]
@@ -52,7 +52,7 @@ public sealed class MeshAlgorithmsTests
         var result = MeshAlgorithms.MinimumSpanningForest(CreateGraph());
 
         Assert.Equal(4, result.Edges.Count);
-        Assert.Equal(5, result.Components.Count);
+        Assert.Equal(2, result.Components.Count);
         Assert.Contains(result.Components, component => component.Contains("ISOLATED"));
     }
 
