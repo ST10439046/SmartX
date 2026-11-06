@@ -705,9 +705,9 @@ Current routes include:
 | `/sensors`            | Sensor management              |
 | `/sensor/:macaddress` | Individual sensor details      |
 | `/commands`           | Command functionality          |
-| `/topology`           | Network topology functionality |
+| `/topology`           | Network topology and mesh routing |
 
-The commands and topology sections currently provide the foundation for future functionality.
+The commands and topology sections are implemented and available through the application navigation.
 
 ---
 
@@ -1125,14 +1125,7 @@ Future development can introduce:
 
 ## Network Topology
 
-Future development can introduce:
-
-* Interactive topology diagrams
-* Deployment nodes
-* Sensor relationships
-* Mesh routing
-* Network health monitoring
-* Connectivity analytics
+The operator-managed mesh graph, gateway selection, traversal, routing, spanning forest, and failure-simulation functionality are implemented. Remaining validation and handoff work is tracked in the Part 3 checklist below.
 
 ## Additional IoT Features
 
@@ -1192,7 +1185,7 @@ Smart-X provides a structured IoT management platform centred around sensor regi
 
 The application separates the React frontend from the ASP.NET Core backend API while keeping both components within a single repository. This separation provides a clear boundary between presentation, API communication, business logic, and data persistence.
 
-The current implementation establishes the Sensor Data Ingestion and Telemetry pillar as the primary functional area while providing a foundation for the future Command Stream and Network Topology pillars.
+The current implementation includes sensor telemetry, real-time command stream and history, and the network topology and mesh-routing dashboard.
 
 **Smart-X IoT Platform**
 **PROG7312 POE 2026**
@@ -1282,6 +1275,57 @@ Example override request:
 
 The workflow at `.github/workflows/ci.yml` runs on pushes and pull requests targeting `master` or `main`. It restores and builds the .NET 10 API, runs discovered .NET test projects if present, installs frontend dependencies with `npm ci`, runs ESLint, and creates a Vite production build. Check the Actions tab for the actual run result.
 
+
+---
+
+# Part 3: Network Topology and Mesh Routing
+
+## Implementation handoff checklist
+
+This checklist is the source of truth for what has been completed and what remains. Update it whenever implementation or verification changes so another development session can continue without reconstructing the history.
+
+### Implemented on `feature/network-mesh-implementation`
+
+- [x] Add normalized 0-100 simulated signal quality and derive routing cost as `101 - quality`.
+- [x] Persist the operator-selected gateway on the Sensor record.
+- [x] Add a SQL Server filtered unique index for the single-gateway rule.
+- [x] Add startup compatibility logic for existing databases and legacy nullable signal values.
+- [x] Implement the adjacency-list graph and BFS/DFS traversal.
+- [x] Implement Dijkstra shortest-path routing.
+- [x] Implement Prim minimum-spanning forest for disconnected networks.
+- [x] Implement temporary node/link failure simulation.
+- [x] Implement AVL timestamp indexing, duplicate timestamp buckets, startup hydration, and telemetry write synchronization.
+- [x] Add mesh overview, gateway, discovery, route, MST, failure simulation, and telemetry-range API endpoints.
+- [x] Add the mesh dashboard, gateway selector, node details, algorithm actions, and AVL range query.
+- [x] Enable the `/topology` route and navigation item.
+- [x] Seed six deterministic demo sensors, a five-node connected component, one isolated node, and known weighted links.
+- [x] Add backend algorithm/AVL tests and the operator walkthrough at [docs/MESH-DEMO-TEST-ROUTINE.md](docs/MESH-DEMO-TEST-ROUTINE.md).
+- [x] Update the main README feature description and API documentation.
+
+### Remaining before merge / assessment handoff
+
+- [ ] Re-run GitHub Actions after the latest frontend lint repair; resolve any remaining CI failures.
+- [ ] Verify backend .NET build and all backend tests on the CI runner.
+- [ ] Verify frontend `npm test`, `npm run lint`, and `npm run build` on the CI runner.
+- [ ] Run `docker compose config` and build/start the complete Docker stack.
+- [ ] Verify the startup schema patch against both a fresh Docker database and an existing persistent database volume.
+- [ ] Walk through every expected result in [the mesh demo and test routine](docs/MESH-DEMO-TEST-ROUTINE.md), including gateway changes, BFS/DFS, Dijkstra, Prim, isolated-node handling, failure simulation, and AVL telemetry range.
+- [ ] Fix any integration defects found during the Docker walkthrough and update this checklist.
+- [ ] Capture final test evidence/screenshots and update the Part 3 implementation/evaluation report if required by the assessment brief.
+- [ ] Review the feature branch diff, then merge the pull request into `master` only after CI and manual Docker verification are green.
+
+### Current verification snapshot
+
+- Last observed CI run: frontend tests passed (3/3), but ESLint failed on React purity and effect rules in `MeshTopologyPage.jsx`.
+- Those two lint findings have been repaired in the latest branch commit. A fresh CI run is required to confirm the repair.
+- Full .NET and Docker verification has not yet been performed from this session. Do not treat the feature as fully verified until the unchecked items above are completed.
+
+### Continuation instructions
+
+1. Read this checklist and [docs/MESH-DEMO-TEST-ROUTINE.md](docs/MESH-DEMO-TEST-ROUTINE.md).
+2. Continue on branch `feature/network-mesh-implementation`, not directly on `master`.
+3. Start with the unchecked CI and Docker verification items.
+4. Update this checklist in the same work session whenever a task changes from pending to complete, or a new issue is discovered.
 
 ---
 
