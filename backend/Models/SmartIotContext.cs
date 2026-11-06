@@ -142,7 +142,7 @@ public partial class SmartIotContext : DbContext
         {
             entity.HasKey(e => e.LinkId).HasName("PK__NetworkT__2D1221558729ED3A");
 
-            entity.ToTable("NetworkTopology");
+            entity.ToTable("NetworkTopology", table => table.HasCheckConstraint("CK_NetworkTopology_SignalStrength", "[SignalStrength] >= 0 AND [SignalStrength] <= 100"));
 
             entity.Property(e => e.LinkId).HasColumnName("LinkID");
             entity.Property(e => e.FromNodeMac)
