@@ -138,6 +138,20 @@ jobs:
             --header "Content-Type: application/json" \
             --data '{"failedSensorMacs":["00:1A:2B:3C:4D:61"],"failedLinkIds":[]}' |
             jq -e '.simulated == true and .gatewayReachable == true and (.discovery | length) == 4 and (.components | length) == 2'
+          curl --fail --silent http://localhost:5231/api/mesh/overview |
+            jq -e 'any(.nodes[]; .macaddress == "00:1A:2B:3C:4D:61") and .summary.totalLinks == 6'
+
+          echo "Checking duplicate-link and invalid signal-quality validation..."
+          duplicate_status=$(curl --silent --output /tmp/duplicate-link.json --write-out "%{http_code}" \
+            --request POST http://localhost:5231/api/networktopology \
+            --header "Content-Type: application/json" \
+            --data '{"fromNodeMac":"00:1A:2B:3C:4D:5E","toNodeMac":"00:1A:2B:3C:4D:5F","signalStrength":99}')
+          test "$duplicate_status" = "400"
+          invalid_quality_status=$(curl --silent --output /tmp/invalid-quality.json --write-out "%{http_code}" \
+            --request POST http://localhost:5231/api/networktopology \
+            --header "Content-Type: application/json" \
+            --data '{"fromNodeMac":"00:1A:2B:3C:4D:5E","toNodeMac":"00:1A:2B:3C:4D:63","signalStrength":101}')
+          test "$invalid_quality_status" = "400"
 
           echo "Checking gateway selection persistence..."
           curl --fail --silent --request PUT http://localhost:5231/api/mesh/gateway \
