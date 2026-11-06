@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SmartIotApi.Models;
+using SmartIotApi.Services.Mesh;
 
 namespace SmartIotApi.Controllers
 {
@@ -10,10 +11,12 @@ namespace SmartIotApi.Controllers
     public class TelemetryDataController : ControllerBase
     {
         private readonly SmartIotContext _context;
+        private readonly TelemetryAvlTreeService _telemetryIndex;
 
-        public TelemetryDataController(SmartIotContext context)
+        public TelemetryDataController(SmartIotContext context, TelemetryAvlTreeService telemetryIndex)
         {
             _context = context;
+            _telemetryIndex = telemetryIndex;
         }
 
         /// <summary>
@@ -51,6 +54,7 @@ namespace SmartIotApi.Controllers
         {
             _context.TelemetryData.Add(telemetry);
             await _context.SaveChangesAsync();
+            _telemetryIndex.Add(telemetry);
 
             return CreatedAtAction("GetTelemetryDatum", new { id = telemetry.TelemetryId }, telemetry);
         }
@@ -71,6 +75,7 @@ namespace SmartIotApi.Controllers
             try
             {
                 await _context.SaveChangesAsync();
+                _telemetryIndex.Rebuild(await _context.TelemetryData.AsNoTracking().ToListAsync());
             }
             catch (DbUpdateConcurrencyException)
             {
@@ -98,6 +103,7 @@ namespace SmartIotApi.Controllers
 
             _context.TelemetryData.Remove(telemetry);
             await _context.SaveChangesAsync();
+            _telemetryIndex.Rebuild(await _context.TelemetryData.AsNoTracking().ToListAsync());
 
             return NoContent();
         }
