@@ -105,6 +105,9 @@ export default function MeshTopologyPage() {
   const [route, setRoute] = useState(null);
   const [mst, setMst] = useState(null);
   const [simulation, setSimulation] = useState(null);
+  const [telemetryRange, setTelemetryRange] = useState(null);
+  const [rangeStart, setRangeStart] = useState(new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().slice(0, 16));
+  const [rangeEnd, setRangeEnd] = useState(new Date().toISOString().slice(0, 16));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
@@ -194,6 +197,23 @@ export default function MeshTopologyPage() {
       setSimulation(response.data);
     } catch (requestError) {
       setError(requestError.response?.data?.message || 'Failure simulation failed.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const queryTelemetryRange = async () => {
+    setBusy(true);
+    setError('');
+    try {
+      const response = await meshApi.getTelemetryRange(
+        new Date(rangeStart).toISOString(),
+        new Date(rangeEnd).toISOString(),
+        selectedMac || undefined,
+      );
+      setTelemetryRange(response.data);
+    } catch (requestError) {
+      setError(requestError.response?.data?.message || 'Could not query the telemetry range.');
     } finally {
       setBusy(false);
     }
@@ -349,6 +369,48 @@ export default function MeshTopologyPage() {
           <p className="mt-2 text-sm text-amber-800 dark:text-amber-100">Gateway reachable: {simulation.gatewayReachable ? 'Yes' : 'No'} · Remaining reachable nodes: {simulation.discovery.length}</p>
           <p className="mt-1 text-xs text-amber-700 dark:text-amber-300">{simulation.warning}</p>
           <p className="mt-2 text-xs text-amber-800 dark:text-amber-200">Connected components after failure: {simulation.components.length}</p>
+        </div>}
+      </section>
+
+      <section className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+        <div className="flex items-center gap-2">
+          <Activity size={18} className="text-primary-600 dark:text-primary-400" />
+          <div>
+            <h2 className="font-semibold text-gray-900 dark:text-white">Historical telemetry range</h2>
+            <p className="text-xs text-gray-500 dark:text-gray-400">Query readings through the AVL timestamp index. Select a node above to filter by sensor.</p>
+          </div>
+        </div>
+        <div className="mt-4 grid gap-3 md:grid-cols-[1fr_1fr_auto]">
+          <label className="text-sm text-gray-600 dark:text-gray-300">From
+            <input type="datetime-local" value={rangeStart} onChange={(event) => setRangeStart(event.target.value)}
+              className="mt-1 block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-950 dark:text-white" />
+          </label>
+          <label className="text-sm text-gray-600 dark:text-gray-300">To
+            <input type="datetime-local" value={rangeEnd} onChange={(event) => setRangeEnd(event.target.value)}
+              className="mt-1 block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-950 dark:text-white" />
+          </label>
+          <button type="button" onClick={queryTelemetryRange} disabled={busy}
+            className="self-end rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50">Query AVL range</button>
+        </div>
+        {telemetryRange && <div className="mt-4">
+          <p className="text-sm font-medium text-gray-800 dark:text-gray-100">{telemetryRange.count} record(s) returned · {telemetryRange.index}</p>
+          <div className="mt-2 max-h-64 overflow-auto rounded-lg border border-gray-200 dark:border-gray-800">
+            <table className="w-full text-left text-xs">
+              <thead className="sticky top-0 bg-gray-100 dark:bg-gray-800">
+                <tr><th className="p-2">Timestamp</th><th className="p-2">Metric</th><th className="p-2">Value</th></tr>
+              </thead>
+              <tbody>
+                {telemetryRange.records.map((record) => (
+                  <tr key={record.telemetryId} className="border-t border-gray-100 dark:border-gray-800">
+                    <td className="p-2 text-gray-600 dark:text-gray-300">{new Date(record.timestamp).toLocaleString()}</td>
+                    <td className="p-2 text-gray-700 dark:text-gray-200">{record.dataType}</td>
+                    <td className="p-2 font-medium text-gray-900 dark:text-white">{record.dataValue}</td>
+                  </tr>
+                ))}
+                {telemetryRange.records.length === 0 && <tr><td colSpan="3" className="p-3 text-center text-gray-500">No readings in this range.</td></tr>}
+              </tbody>
+            </table>
+          </div>
         </div>}
       </section>
 
