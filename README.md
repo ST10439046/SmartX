@@ -8,7 +8,7 @@ Smart-X is an IoT monitoring and management platform developed as part of the PR
 
 The platform is designed around a smart-building and smart-facility environment where connected sensors can be registered, monitored, and managed through a central web interface.
 
-**Demo Video Link:** [https://youtu.be/7UVAFmF4p54](https://youtu.be/aNDt0En_QMs)]
+**Demo Video Link:** [https://youtu.be/h8u4Bj4VVnE](https://youtu.be/h8u4Bj4VVnE)]
 
 ---
 
@@ -1324,13 +1324,13 @@ This checklist is the source of truth for what has been completed and what remai
 - [x] Docker Compose validation and image builds passed on GitHub Actions.
 - [x] Extend CI to start the complete SQL Server/API/frontend Docker stack and test the seeded mesh API end-to-end.
 - [x] Full Docker integration job passed: SQL Server bootstrapped, API and frontend started, and all seeded mesh API assertions passed.
-- [ ] Run `docker compose config` and build/start the complete Docker stack.
+- [x] Run `docker compose config` and build/start the complete Docker stack.
 - [x] Verify startup schema creation against a fresh Docker database volume in CI.
-- [ ] Verify the startup schema patch against an existing persistent database volume containing the earlier Smart-X schema.
-- [ ] Walk through the UI manually using [the mesh demo and test routine](docs/MESH-DEMO-TEST-ROUTINE.md), including gateway changes, BFS/DFS, Dijkstra, Prim, isolated-node handling, failure simulation, and AVL telemetry range.
-- [ ] Fix any integration defects found during the Docker walkthrough and update this checklist.
-- [ ] Capture final test evidence/screenshots and update the Part 3 implementation/evaluation report if required by the assessment brief.
-- [ ] Review the feature branch diff, then merge the pull request into `master` only after CI and manual Docker verification are green.
+- [x] Verify the startup schema patch against an existing persistent database volume containing the earlier Smart-X schema.
+- [x] Walk through the UI manually using [the mesh demo and test routine](docs/MESH-DEMO-TEST-ROUTINE.md), including gateway changes, BFS/DFS, Dijkstra, Prim, isolated-node handling, failure simulation, and AVL telemetry range.
+- [x] Fix any integration defects found during the Docker walkthrough and update this checklist.
+- [x] Capture final test evidence/screenshots and update the Part 3 implementation/evaluation report if required by the assessment brief.
+- [x] Review the feature branch diff, then merge the pull request into `master` only after CI and manual Docker verification are green.
 
 ### Current verification snapshot
 
