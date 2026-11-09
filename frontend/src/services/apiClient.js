@@ -243,6 +243,21 @@ export const topologyApi = {
   },
 };
 
+
+ 
+// ============ MESH NETWORK API ============
+export const meshApi = {
+  getOverview: () => apiClient.get('/api/mesh/overview'),
+  setGateway: (sensorMac) => apiClient.put('/api/mesh/gateway', { sensorMac }),
+  discover: (algorithm = 'bfs') => apiClient.get('/api/mesh/discovery', { params: { algorithm } }),
+  getRoute: (destination) => apiClient.get('/api/mesh/routes', { params: { destination } }),
+  getMst: () => apiClient.get('/api/mesh/mst'),
+  simulateFailure: (failedSensorMacs = [], failedLinkIds = []) =>
+    apiClient.post('/api/mesh/simulations/failures', { failedSensorMacs, failedLinkIds }),
+  getTelemetryRange: (fromUtc, toUtc, sensorMac) =>
+    apiClient.get('/api/mesh/telemetry/range', { params: { fromUtc, toUtc, sensorMac } }),
+};
+
 // ============ HEALTH CHECK ============
 export const healthCheck = async () => {
   try {

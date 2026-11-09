@@ -50,6 +50,8 @@ namespace SmartIotApi.Controllers
         [HttpPost]
         public async Task<ActionResult<NetworkTopology>> CreateNetworkTopology(NetworkTopology topology)
         {
+            var validation = await ValidateLink(topology, null);
+            if (validation != null) return BadRequest(new { message = validation });
             _context.NetworkTopologies.Add(topology);
             await _context.SaveChangesAsync();
 
@@ -66,6 +68,8 @@ namespace SmartIotApi.Controllers
             {
                 return BadRequest();
             }
+            var validation = await ValidateLink(topology, id);
+            if (validation != null) return BadRequest(new { message = validation });
 
             _context.Entry(topology).State = EntityState.Modified;
 
@@ -102,5 +106,31 @@ namespace SmartIotApi.Controllers
 
             return NoContent();
         }
+        private async Task<string?> ValidateLink(NetworkTopology topology, int? excludedLinkId)
+        {
+            if (string.IsNullOrWhiteSpace(topology.FromNodeMac) || string.IsNullOrWhiteSpace(topology.ToNodeMac))
+                return "Both endpoint sensor MAC addresses are required.";
+            if (string.Equals(topology.FromNodeMac.Trim(), topology.ToNodeMac.Trim(), StringComparison.OrdinalIgnoreCase))
+                return "A sensor cannot be linked to itself.";
+            if (!double.IsFinite(topology.SignalStrength) || topology.SignalStrength is < 0 or > 100)
+                return "SignalStrength must be a normalized percentage between 0 and 100.";
+
+            var endpoints = new[] { topology.FromNodeMac.Trim(), topology.ToNodeMac.Trim() };
+            var activeCount = await _context.Sensors.CountAsync(sensor =>
+                endpoints.Contains(sensor.Macaddress) && sensor.IsActive);
+            if (activeCount != 2)
+                return "Both link endpoints must be registered active sensors.";
+
+            var existingLinks = _context.NetworkTopologies.AsQueryable();
+            if (excludedLinkId.HasValue)
+                existingLinks = existingLinks.Where(link => link.LinkId != excludedLinkId.Value);
+            var duplicate = await existingLinks.AnyAsync(link =>
+                (link.FromNodeMac == endpoints[0] && link.ToNodeMac == endpoints[1]) ||
+                (link.FromNodeMac == endpoints[1] && link.ToNodeMac == endpoints[0]));
+            if (duplicate)
+                return "A link already exists between these sensors.";
+            return null;
+        }
+
     }
 }

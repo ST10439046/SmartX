@@ -25,6 +25,9 @@ public partial class Sensor
     /// </summary>
     public bool IsActive { get; set; } = true;
 
+    /// <summary>Marks the operator-selected mesh gateway. SQL Server enforces a single selected gateway.</summary>
+    public bool IsGateway { get; set; } = false;
+
     /// <summary>
     /// Foreign key to the DeploymentNode where this sensor is located in the hierarchy.
     /// Allows traversal up the hierarchy to validate the sensor's deployment path.

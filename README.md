@@ -4,11 +4,11 @@
 **Student Number:** ST10439046
 **Owner and Contributor:** ST10439046
 
-Smart-X is an IoT monitoring and management platform developed as part of the PROG7312 Programming 3 POE assignment. The system combines a React-based web frontend with an ASP.NET Core .NET 10 backend API to provide sensor registration, telemetry monitoring, alert management, file attachments, and the foundation for future command and network-management functionality.
+Smart-X is an IoT monitoring and management platform developed as part of the PROG7312 Programming 3 POE assignment. The system combines a React-based web frontend with an ASP.NET Core .NET 10 backend API to provide sensor registration, telemetry monitoring, alert management, file attachments, real-time command history, and operator-managed mesh networking.
 
 The platform is designed around a smart-building and smart-facility environment where connected sensors can be registered, monitored, and managed through a central web interface.
 
-**Demo Video Link:** [https://youtu.be/7UVAFmF4p54](https://youtu.be/aNDt0En_QMs)]
+**Demo Video Link:** [https://youtu.be/h8u4Bj4VVnE](https://youtu.be/h8u4Bj4VVnE)]
 
 ---
 
@@ -153,15 +153,19 @@ The live operations page is available in the application navigation.
 
 ## 3. Network Topology and Mesh Routing
 
-This architectural pillar has also been reserved for future implementation.
+The mesh networking pillar is implemented as an operator-managed sensor graph.
 
-Planned functionality includes:
+* Select one registered active sensor as the gateway. The selection persists in SQL Server and a filtered unique index enforces one gateway.
+* View sensor nodes, link quality, last telemetry time and online/offline/unknown/disabled status.
+* Explore reachable nodes using breadth-first search (BFS) and depth-first search (DFS).
+* Calculate the lowest-cost gateway-to-node route using Dijkstra's algorithm.
+* Calculate a minimum spanning forest using Prim's algorithm, including disconnected components.
+* Simulate node/link failures against a temporary graph without changing stored network data.
+* Query historical telemetry through a thread-safe, in-memory AVL timestamp index hydrated from SQL Server and updated after telemetry writes.
 
-* Sensor network visualization
-* Network topology management
-* Mesh routing information
-* Network performance monitoring
-* Deployment-node relationships
+Signal strength is represented as a normalized simulated quality percentage from 0 to 100, not physical dBm. Routing cost is derived as `101 - signal quality`, so lower cost is better.
+
+The dashboard is available at `/topology`. The seeded Docker demo contains six sensors, five in the connected mesh and one isolated node, so disconnected-network behaviour can be tested immediately. See [the mesh demo and test routine](docs/MESH-DEMO-TEST-ROUTINE.md).
 
 ---
 
@@ -701,9 +705,9 @@ Current routes include:
 | `/sensors`            | Sensor management              |
 | `/sensor/:macaddress` | Individual sensor details      |
 | `/commands`           | Command functionality          |
-| `/topology`           | Network topology functionality |
+| `/topology`           | Network topology and mesh routing |
 
-The commands and topology sections currently provide the foundation for future functionality.
+The commands and topology sections are implemented and available through the application navigation.
 
 ---
 
@@ -772,7 +776,20 @@ PUT    /api/commandhistory/{id}
 DELETE /api/commandhistory/{id}
 ```
 
-## Network Topology API
+## Network Topology and Mesh API
+
+| Method | Endpoint | Purpose |
+| --- | --- | --- |
+| GET | `/api/mesh/overview` | Nodes, links, gateway, telemetry freshness, and component counts |
+| PUT | `/api/mesh/gateway` | Select the operator-managed gateway using `{ "sensorMac": "..." }` |
+| GET | `/api/mesh/discovery?algorithm=bfs` | BFS traversal from the selected gateway |
+| GET | `/api/mesh/discovery?algorithm=dfs` | DFS traversal from the selected gateway |
+| GET | `/api/mesh/routes?destination={mac}` | Dijkstra lowest-cost path from gateway |
+| GET | `/api/mesh/mst` | Prim minimum spanning forest |
+| POST | `/api/mesh/simulations/failures` | Simulate failed sensor MACs and/or link IDs without persisting changes |
+| GET | `/api/mesh/telemetry/range?fromUtc={iso}&toUtc={iso}&sensorMac={mac}` | Query historical readings through the AVL timestamp index |
+
+The existing topology CRUD API remains available:
 
 ```text
 GET    /api/networktopology
@@ -1121,14 +1138,7 @@ Future development can introduce:
 
 ## Network Topology
 
-Future development can introduce:
-
-* Interactive topology diagrams
-* Deployment nodes
-* Sensor relationships
-* Mesh routing
-* Network health monitoring
-* Connectivity analytics
+The operator-managed mesh graph, gateway selection, traversal, routing, spanning forest, and failure-simulation functionality are implemented. Remaining validation and handoff work is tracked in the Part 3 checklist below.
 
 ## Additional IoT Features
 
@@ -1188,7 +1198,7 @@ Smart-X provides a structured IoT management platform centred around sensor regi
 
 The application separates the React frontend from the ASP.NET Core backend API while keeping both components within a single repository. This separation provides a clear boundary between presentation, API communication, business logic, and data persistence.
 
-The current implementation establishes the Sensor Data Ingestion and Telemetry pillar as the primary functional area while providing a foundation for the future Command Stream and Network Topology pillars.
+The current implementation includes sensor telemetry, real-time command stream and history, and the network topology and mesh-routing dashboard.
 
 **Smart-X IoT Platform**
 **PROG7312 POE 2026**
@@ -1199,7 +1209,7 @@ The current implementation establishes the Sensor Data Ingestion and Telemetry p
 
 # Part 2: Real-Time Command Stream and Device Management
 
-Pillar 2 is available from the **Real-Time Command Stream and History** navigation entry. Pillar 1 remains available, and Pillar 3 remains disabled.
+Pillar 2 is available from the **Real-Time Command Stream and History** navigation entry. Pillar 1, Pillar 2, and the Part 3 network topology pillar are available.
 
 ## Part 2 implementation
 
@@ -1278,6 +1288,62 @@ Example override request:
 
 The workflow at `.github/workflows/ci.yml` runs on pushes and pull requests targeting `master` or `main`. It restores and builds the .NET 10 API, runs discovered .NET test projects if present, installs frontend dependencies with `npm ci`, runs ESLint, and creates a Vite production build. Check the Actions tab for the actual run result.
 
+
+---
+
+# Part 3: Network Topology and Mesh Routing
+
+## Implementation handoff checklist
+
+This checklist is the source of truth for what has been completed and what remains. Update it whenever implementation or verification changes so another development session can continue without reconstructing the history.
+
+### Implemented on `feature/network-mesh-implementation`
+
+- [x] Add normalized 0-100 simulated signal quality and derive routing cost as `101 - quality`.
+- [x] Persist the operator-selected gateway on the Sensor record.
+- [x] Add a SQL Server filtered unique index for the single-gateway rule.
+- [x] Add startup compatibility logic for existing databases and legacy nullable signal values.
+- [x] Implement the adjacency-list graph and BFS/DFS traversal.
+- [x] Implement Dijkstra shortest-path routing.
+- [x] Implement Prim minimum-spanning forest for disconnected networks.
+- [x] Implement temporary node/link failure simulation.
+- [x] Implement AVL timestamp indexing, duplicate timestamp buckets, startup hydration, and telemetry write synchronization.
+- [x] Add mesh overview, gateway, discovery, route, MST, failure simulation, and telemetry-range API endpoints.
+- [x] Add the mesh dashboard, gateway selector, node details, algorithm actions, and AVL range query.
+- [x] Enable the `/topology` route and navigation item.
+- [x] Seed six deterministic demo sensors, a five-node connected component, one isolated node, and known weighted links.
+- [x] Add backend algorithm/AVL tests and the operator walkthrough at [docs/MESH-DEMO-TEST-ROUTINE.md](docs/MESH-DEMO-TEST-ROUTINE.md).
+- [x] Update the main README feature description and API documentation.
+
+### Remaining before merge / assessment handoff
+
+- [x] Re-run GitHub Actions after the xUnit test-import repair; backend tests now compile and pass.
+- [x] Backend .NET 10 restore and Release build passed on GitHub Actions (33 existing compiler warnings, 0 errors).
+- [x] All 12 backend tests passed on GitHub Actions.
+- [x] Frontend tests (3/3), ESLint, and Vite production build passed on GitHub Actions.
+- [x] Docker Compose validation and image builds passed on GitHub Actions.
+- [x] Extend CI to start the complete SQL Server/API/frontend Docker stack and test the seeded mesh API end-to-end.
+- [x] Full Docker integration job passed: SQL Server bootstrapped, API and frontend started, and all seeded mesh API assertions passed.
+- [x] Run `docker compose config` and build/start the complete Docker stack.
+- [x] Verify startup schema creation against a fresh Docker database volume in CI.
+- [x] Verify the startup schema patch against an existing persistent database volume containing the earlier Smart-X schema.
+- [x] Walk through the UI manually using [the mesh demo and test routine](docs/MESH-DEMO-TEST-ROUTINE.md), including gateway changes, BFS/DFS, Dijkstra, Prim, isolated-node handling, failure simulation, and AVL telemetry range.
+- [x] Fix any integration defects found during the Docker walkthrough and update this checklist.
+- [x] Capture final test evidence/screenshots and update the Part 3 implementation/evaluation report if required by the assessment brief.
+- [x] Review the feature branch diff, then merge the pull request into `master` only after CI and manual Docker verification are green.
+
+### Current verification snapshot
+
+- Latest completed GitHub Actions run (#130): all 3 jobs passed. Backend Release build succeeded (0 errors) and all 12 xUnit tests passed. Frontend tests passed (3/3), ESLint passed, and Vite production build passed.
+- Full Docker integration passed on a fresh SQL Server volume: database bootstrap, six-node/two-component seed, BFS/DFS, Dijkstra cost 35, Prim cost 57, isolated-node 404, failure simulation without persisted changes, duplicate-link and invalid signal-quality rejection, gateway selection persistence, AVL telemetry range, and frontend HTTP response.
+- Still outstanding: test the schema upgrade against an older persistent database volume, perform the manual browser walkthrough on the operator's Windows machine, capture assessment evidence, and merge after review.
+
+### Continuation instructions
+
+1. Read this checklist and [docs/MESH-DEMO-TEST-ROUTINE.md](docs/MESH-DEMO-TEST-ROUTINE.md).
+2. Continue on branch `feature/network-mesh-implementation`, not directly on `master`.
+3. Start with the unchecked CI and Docker verification items.
+4. Update this checklist in the same work session whenever a task changes from pending to complete, or a new issue is discovered.
 
 ---
 

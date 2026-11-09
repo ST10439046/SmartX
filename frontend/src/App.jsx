@@ -6,7 +6,7 @@ import { useNotification } from './hooks';
 import DashboardPage from './pages/DashboardPage';
 import SensorCRUDPage from './pages/SensorCRUDPage';
 import SensorDetailsPage from './pages/SensorDetailsPage';
-import ComingSoonPage from './pages/ComingSoonPage';
+import MeshTopologyPage from './pages/MeshTopologyPage';
 import CommandStreamPage from './pages/CommandStreamPage';
 
 function App() {
@@ -27,15 +27,7 @@ function App() {
               <Route path="/sensors" element={<SensorCRUDPage />} />
               <Route path="/sensor/:macaddress" element={<SensorDetailsPage />} />
               <Route path="/commands" element={<CommandStreamPage />} />
-              <Route
-                path="/topology"
-                element={
-                  <ComingSoonPage
-                    title="Network Topology and Mesh Routing"
-                    description="Visualize your sensor network topology, monitor mesh routing, and optimize network performance."
-                  />
-                }
-              />
+              <Route path="/topology" element={<MeshTopologyPage />} />
             </Routes>
           </div>
         </main>

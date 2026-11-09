@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SmartIotApi.Models;
 using SmartIotApi.Services;
+using SmartIotApi.Services.Mesh;
 
 namespace SmartIotApi.Controllers;
 
@@ -12,11 +13,13 @@ public sealed class CommandStreamController : ControllerBase
 {
     private readonly SmartIotContext _db;
     private readonly RealtimeCommandService _stream;
+    private readonly TelemetryAvlTreeService _telemetryIndex;
 
-    public CommandStreamController(SmartIotContext db, RealtimeCommandService stream)
+    public CommandStreamController(SmartIotContext db, RealtimeCommandService stream, TelemetryAvlTreeService telemetryIndex)
     {
         _db = db;
         _stream = stream;
+        _telemetryIndex = telemetryIndex;
     }
 
     [HttpGet("dashboard")]
@@ -57,7 +60,8 @@ public sealed class CommandStreamController : ControllerBase
         _stream.RegisterDevices(new[] { sensor });
         _stream.Enqueue(new(mac, type, request.DataValue, timestamp, critical, request.ErrorCode));
         var processed = _stream.Drain();
-        _db.TelemetryData.Add(new TelemetryDatum { SensorMac = mac, DataType = type, DataValue = request.DataValue, Timestamp = timestamp });
+        var telemetryRecord = new TelemetryDatum { SensorMac = mac, DataType = type, DataValue = request.DataValue, Timestamp = timestamp };
+        _db.TelemetryData.Add(telemetryRecord);
 
         // Resolve rule alerts automatically when a new reading returns inside the configured range.
         foreach (var rule in matchedRules)
@@ -105,6 +109,7 @@ public sealed class CommandStreamController : ControllerBase
         }
 
         await _db.SaveChangesAsync(ct);
+        _telemetryIndex.Add(telemetryRecord);
         return Accepted(new
         {
             accepted = true,
